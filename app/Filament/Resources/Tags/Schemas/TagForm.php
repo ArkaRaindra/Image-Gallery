@@ -30,7 +30,7 @@ class TagForm
                     ->default('general'),
 
                 Textarea::make('description')
-                    ->columnspanFull(),
+                    ->columnSpanFull(),
             ]);
     }
 }

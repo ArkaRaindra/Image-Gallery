@@ -39,7 +39,7 @@ class Post extends Model
 
     public function tags(): BelongsToMany
     {
-        return $this->belongsToMany(Tag::class, 'post_tag')
+        return $this->belongsToMany(Tag::class, 'post_tags')
             ->using(PostTag::class)
             ->withTimestamps();
     }

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Posts\Schemas;
 
+use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -17,8 +18,11 @@ class PostForm
                 FileUpload::make('file_path')
                     ->label('File')
                     ->image()
+                    ->disk('public')
+                    ->visibility('public')
                     ->directory('posts')
                     ->required(),
+
                 Select::make('rating')
                     ->options([
                         'general' => 'General',
@@ -28,12 +32,13 @@ class PostForm
                     ])
                     ->required()
                     ->default('general'),
+
                 Select::make('tags')
                     ->relationship('tags', 'name')
                     ->multiple()
                     ->searchable()
                     ->preload()
-                    ->createOptoonForm([
+                    ->createOptionForm([
                         TextInput::make('name')->required(),
                         Select::make('category')
                             ->options([
@@ -46,15 +51,17 @@ class PostForm
                             ->default('general')
                             ->required(),
                     ]),
+
                 TextInput::make('source')
                     ->url()
                     ->maxLength(255),
+
                 Textarea::make('description')
                     ->columnSpanFull(),
+
                 Checkbox::make('is_approved')
                     ->label('Approved')
                     ->default(false),
-
             ]);
     }
 }

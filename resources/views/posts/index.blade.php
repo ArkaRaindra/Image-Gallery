@@ -21,7 +21,7 @@
             @foreach ($posts as $post)
                 <a href="{{ route('posts.show', $post) }}" class="block group">
                     <img
-                        src="{{ Storage::disk('public')->url($post->thumbnail_path) }}"
+                        src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail_path) }}"
                         alt="post {{ $post->id }}"
                         class="w-full h-40 object-cover rounded group-hover:opacity-80"
                     >

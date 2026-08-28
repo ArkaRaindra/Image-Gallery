@@ -9,7 +9,7 @@
     <div class="max-w-5xl mx-auto p-4 grid md:grid-cols-4 gap-6">
         <div class="md:col-span-3">
             <img
-                src="{{ Storage::disk('public')->url($post->file_path) }}"
+                src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->file_path) }}"
                 alt="post {{ $post->id }}"
                 class="w-full rounded"
             >

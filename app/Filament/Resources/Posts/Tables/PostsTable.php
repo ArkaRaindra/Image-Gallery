@@ -11,6 +11,8 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 
 class PostsTable
@@ -26,7 +28,7 @@ class PostsTable
                     ->badge(),
                 TextColumn::make('score')
                     ->sortable(),
-                IconColumn::make('is_appeoved')
+                IconColumn::make('is_approved')
                     ->boolean()
                     ->label('Approved'),
                 TextColumn::make('tags.name')
@@ -37,8 +39,8 @@ class PostsTable
                     ->sortable(),
             ])
             ->filters([
-                TernaryFIlter::make('is_approved'),
-                SelectFIlter::make('rating')
+                TernaryFilter::make('is_approved'),
+                SelectFilter::make('rating')
                     ->options([
                         'general' => 'General',
                         'sensitive' => 'Sensitive',
