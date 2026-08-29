@@ -23,6 +23,7 @@ class PostsTable
             ->columns([
                 ImageColumn::make('thumbnail_path')
                     ->label('Preview')
+                    ->disk('public')
                     ->square(),
                 TextColumn::make('rating')
                     ->badge(),

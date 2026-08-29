@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Post;
+use App\Models\Tag;
 use App\Services\PostSearchService;
 use Illuminate\Http\Request;
 
@@ -22,9 +23,12 @@ class PostController extends Controller
             ->paginate(24)
             ->withQueryString();
 
+        $popularTags = Tag::orderByDesc('post_count')->limit(20)->get();
+
         return view('posts.index', [
             'posts' => $posts,
             'tagQuery' => $tags,
+            'popularTags' => $popularTags,
         ]);
     }
 
