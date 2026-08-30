@@ -38,15 +38,57 @@ class PostController extends Controller
             'tagQuery' => $tagsQuery,
             'sidebarTags' => $sidebarTags,
             'singleTagName' => $this->resolveSingleTagName($tagsQuery),
+            'votedPosts' => session('voted_posts', []),
         ]);
     }
 
-    public function show(Post $post)
+    public function show(Request $request, Post $post)
     {
         $post->load('tags', 'uploader');
 
+        $tagsQuery = $request->string('tags')->toString();
+
+        $scopedIds = $this->search->search($tagsQuery)->pluck('id');
+
+        // list dipesan id terbaru dulu (descending), jadi "prev" = id lebih besar, "next" = id lebih kecil
+        $prevId = $scopedIds->filter(fn ($id) => $id > $post->id)->min();
+        $nextId = $scopedIds->filter(fn ($id) => $id < $post->id)->max();
+
         return view('posts.show', [
             'post' => $post,
+            'tagQuery' => $tagsQuery,
+            'prevId' => $prevId,
+            'nextId' => $nextId,
+            'votedPosts' => session('voted_posts', []),
+        ]);
+    }
+
+    public function vote(Request $request, Post $post)
+    {
+        $direction = $request->string('direction')->toString();
+        $voted = session('voted_posts', []);
+
+        if (isset($voted[$post->id])) {
+            return response()->json([
+                'score' => $post->score,
+                'voted' => $voted[$post->id],
+            ]);
+        }
+
+        if ($direction === 'up') {
+            $post->increment('score');
+        } elseif ($direction === 'down') {
+            $post->decrement('score');
+        } else {
+            return response()->json(['message' => 'Invalid direction'], 422);
+        }
+
+        $voted[$post->id] = $direction;
+        session(['voted_posts' => $voted]);
+
+        return response()->json([
+            'score' => $post->fresh()->score,
+            'voted' => $direction,
         ]);
     }
 

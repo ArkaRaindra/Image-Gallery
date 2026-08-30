@@ -79,28 +79,30 @@
                 </div>
             </div>
 
-            <div id="panel-posts">
-                <div id="thumb-grid" class="grid gap-3"
+                        <div id="panel-posts">
+                <div id="thumb-grid" class="grid gap-3 items-start"
                     style="--thumb-size: 150px; grid-template-columns: repeat(auto-fill, minmax(var(--thumb-size), 1fr));">
                     @forelse ($posts as $post)
-                        @php
-                            $borderColor = match ($post->rating) {
-                                'sensitive' => 'border-sky-700',
-                                'questionable' => 'border-amber-700',
-                                'explicit' => 'border-red-700',
-                                default => 'border-transparent',
-                            };
-                        @endphp
+                        @php $votedDirection = $votedPosts[$post->id] ?? null; @endphp
                         <a href="{{ route('posts.show', $post) }}"
-                            class="group block rounded overflow-hidden border-2 {{ $borderColor }} bg-gray-900 hover:border-sky-500 transition">
-                            <div class="aspect-square overflow-hidden bg-gray-800">
-                                <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail_path) }}"
-                                    alt="post {{ $post->id }}" loading="lazy"
-                                    class="w-full h-full object-cover group-hover:opacity-80 transition">
-                            </div>
-                            <div class="flex items-center justify-between px-2 py-1 text-xs text-gray-500">
-                                <span>#{{ $post->id }}</span>
-                                <span>★ {{ $post->score }}</span>
+                            class="group block rounded overflow-hidden hover:opacity-90 transition">
+                            <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail_path) }}"
+                                alt="post {{ $post->id }}" loading="lazy" class="w-full h-auto block rounded-t">
+                            <div class="flex items-center justify-center gap-1.5 text-xs text-gray-500 py-1"
+                                data-vote-widget data-post-id="{{ $post->id }}" data-voted="{{ $votedDirection }}">
+                                <button type="button" data-vote="up" {{ $votedDirection ? 'disabled' : '' }}
+                                    class="{{ $votedDirection === 'up' ? 'text-green-400' : 'hover:text-green-400' }} disabled:opacity-40 disabled:cursor-not-allowed">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3 h-3">
+                                        <path fill-rule="evenodd" d="M9.47 6.47a.75.75 0 0 1 1.06 0l4.5 4.5a.75.75 0 1 1-1.06 1.06L10 7.06l-3.97 3.97a.75.75 0 0 1-1.06-1.06l4.5-4.5Z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                                <span data-score>{{ $post->score }}</span>
+                                <button type="button" data-vote="down" {{ $votedDirection ? 'disabled' : '' }}
+                                    class="{{ $votedDirection === 'down' ? 'text-red-400' : 'hover:text-red-400' }} disabled:opacity-40 disabled:cursor-not-allowed">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3 h-3">
+                                        <path fill-rule="evenodd" d="M10.53 13.53a.75.75 0 0 1-1.06 0l-4.5-4.5a.75.75 0 1 1 1.06-1.06L10 11.94l3.97-3.97a.75.75 0 1 1 1.06 1.06l-4.5 4.5Z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
                             </div>
                         </a>
                     @empty

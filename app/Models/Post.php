@@ -56,4 +56,15 @@ class Post extends Model
             ->pluck('name')
             ->implode(' ');
     }
+
+    public function humanFileSize(): string
+    {
+        $bytes = $this->file_size;
+
+        return match (true) {
+            $bytes >= 1_048_576 => round($bytes / 1_048_576, 2) . ' MB',
+            $bytes >= 1024 => round($bytes / 1024, 1) . ' KB',
+            default => $bytes . ' B',
+        };
+    }
 }

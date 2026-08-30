@@ -144,3 +144,52 @@ function setupTagAutocomplete(input) {
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('input[data-tag-autocomplete]').forEach(setupTagAutocomplete);
 });
+
+function applyVotedState(widget, direction) {
+    widget.dataset.voted = direction ?? '';
+    widget.querySelectorAll('[data-vote]').forEach((btn) => {
+        btn.disabled = !!direction;
+        btn.classList.remove('text-green-400', 'text-red-400', 'hover:text-green-400', 'hover:text-red-400');
+        const isActive = direction === btn.dataset.vote;
+        const activeColor = btn.dataset.vote === 'up' ? 'text-green-400' : 'text-red-400';
+        const hoverColor = btn.dataset.vote === 'up' ? 'hover:text-green-400' : 'hover:text-red-400';
+        btn.classList.add(isActive ? activeColor : hoverColor);
+    });
+}
+
+document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-vote]');
+    if (!btn || btn.disabled) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const widget = btn.closest('[data-vote-widget]');
+    const postId = widget.dataset.postId;
+    const direction = btn.dataset.vote;
+
+    try {
+        const res = await fetch(`/posts/${postId}/vote`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({ direction }),
+        });
+        const data = await res.json();
+        widget.querySelectorAll('[data-score]').forEach((el) => (el.textContent = data.score));
+        applyVotedState(widget, data.voted);
+    } catch (err) {
+        console.error('Vote failed', err);
+    }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-vote-widget]').forEach((widget) => {
+        if (widget.dataset.voted) {
+            applyVotedState(widget, widget.dataset.voted);
+        }
+    });
+});
