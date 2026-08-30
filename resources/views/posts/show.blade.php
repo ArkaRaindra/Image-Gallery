@@ -13,7 +13,7 @@
                             placeholder="e.g. 1girl -weapon rating:general" autocomplete="off"
                             data-tag-autocomplete
                             class="flex-1 min-w-0 px-2 py-1.5 rounded bg-gray-800 border border-gray-700 text-sm focus:outline-none focus:border-sky-500">
-                        <button type="submit" class="px-3 rounded bg-sky-600 hover:bg-sky-500 text-sm">🔍</button>
+                        <button type="submit" class="px-3 rounded bg-sky-600 hover:bg-sky-500 text-sm">Search</button>
                     </form>
                 </div>
             </div>
@@ -61,21 +61,21 @@
                         <li><a href="{{ $post->source }}" target="_blank" class="text-sky-400 hover:underline">Source</a></li>
                     @endif
                     <li>Rating: <span class="{{ $ratingColor }}">{{ ucfirst($post->rating) }}</span></li>
-                    <li class="flex items-center gap-2">
+                                        <li class="flex items-center gap-2">
                         Score:
                         @php $votedDirection = $votedPosts[$post->id] ?? null; @endphp
-                        <span class="flex items-center gap-1" data-vote-widget data-post-id="{{ $post->id }}" data-voted="{{ $votedDirection }}">
-                            <button type="button" data-vote="up" {{ $votedDirection ? 'disabled' : '' }}
-                                class="{{ $votedDirection === 'up' ? 'text-green-400' : 'hover:text-green-400' }} disabled:opacity-40 disabled:cursor-not-allowed">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3 h-3">
-                                    <path fill-rule="evenodd" d="M9.47 6.47a.75.75 0 0 1 1.06 0l4.5 4.5a.75.75 0 1 1-1.06 1.06L10 7.06l-3.97 3.97a.75.75 0 0 1-1.06-1.06l4.5-4.5Z" clip-rule="evenodd" />
+                                                <span class="flex items-center gap-1" data-vote-widget data-post-id="{{ $post->id }}" data-voted="{{ $votedDirection }}">
+                            <button type="button" data-vote="up"
+                                class="{{ $votedDirection === 'up' ? 'text-green-400' : 'hover:text-green-400' }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5">
+                                    <path d="M12 20V4M5 11l7-7 7 7" />
                                 </svg>
                             </button>
                             <span data-score>{{ $post->score }}</span>
-                            <button type="button" data-vote="down" {{ $votedDirection ? 'disabled' : '' }}
-                                class="{{ $votedDirection === 'down' ? 'text-red-400' : 'hover:text-red-400' }} disabled:opacity-40 disabled:cursor-not-allowed">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3 h-3">
-                                    <path fill-rule="evenodd" d="M10.53 13.53a.75.75 0 0 1-1.06 0l-4.5-4.5a.75.75 0 1 1 1.06-1.06L10 11.94l3.97-3.97a.75.75 0 1 1 1.06 1.06l-4.5 4.5Z" clip-rule="evenodd" />
+                            <button type="button" data-vote="down"
+                                class="{{ $votedDirection === 'down' ? 'text-red-400' : 'hover:text-red-400' }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5">
+                                    <path d="M12 4v16M5 13l7 7 7-7" />
                                 </svg>
                             </button>
                         </span>

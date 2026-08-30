@@ -50,7 +50,6 @@ class PostController extends Controller
 
         $scopedIds = $this->search->search($tagsQuery)->pluck('id');
 
-        // list dipesan id terbaru dulu (descending), jadi "prev" = id lebih besar, "next" = id lebih kecil
         $prevId = $scopedIds->filter(fn ($id) => $id > $post->id)->min();
         $nextId = $scopedIds->filter(fn ($id) => $id < $post->id)->max();
 
@@ -66,29 +65,33 @@ class PostController extends Controller
     public function vote(Request $request, Post $post)
     {
         $direction = $request->string('direction')->toString();
-        $voted = session('voted_posts', []);
 
-        if (isset($voted[$post->id])) {
-            return response()->json([
-                'score' => $post->score,
-                'voted' => $voted[$post->id],
-            ]);
-        }
-
-        if ($direction === 'up') {
-            $post->increment('score');
-        } elseif ($direction === 'down') {
-            $post->decrement('score');
-        } else {
+        if (! in_array($direction, ['up', 'down'], true)) {
             return response()->json(['message' => 'Invalid direction'], 422);
         }
 
-        $voted[$post->id] = $direction;
+        $voted = session('voted_posts', []);
+        $existing = $voted[$post->id] ?? null;
+
+        if ($existing === $direction) {
+            $post->increment('score', $direction === 'up' ? -1 : 1);
+            unset($voted[$post->id]);
+            $newVote = null;
+        } elseif ($existing) {
+            $post->increment('score', $direction === 'up' ? 2 : -2);
+            $voted[$post->id] = $direction;
+            $newVote = $direction;
+        } else {
+            $post->increment('score', $direction === 'up' ? 1 : -1);
+            $voted[$post->id] = $direction;
+            $newVote = $direction;
+        }
+
         session(['voted_posts' => $voted]);
 
         return response()->json([
             'score' => $post->fresh()->score,
-            'voted' => $direction,
+            'voted' => $newVote,
         ]);
     }
 

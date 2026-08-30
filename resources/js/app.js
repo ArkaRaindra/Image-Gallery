@@ -148,18 +148,17 @@ document.addEventListener('DOMContentLoaded', () => {
 function applyVotedState(widget, direction) {
     widget.dataset.voted = direction ?? '';
     widget.querySelectorAll('[data-vote]').forEach((btn) => {
-        btn.disabled = !!direction;
-        btn.classList.remove('text-green-400', 'text-red-400', 'hover:text-green-400', 'hover:text-red-400');
         const isActive = direction === btn.dataset.vote;
         const activeColor = btn.dataset.vote === 'up' ? 'text-green-400' : 'text-red-400';
         const hoverColor = btn.dataset.vote === 'up' ? 'hover:text-green-400' : 'hover:text-red-400';
+        btn.classList.remove('text-green-400', 'text-red-400', 'hover:text-green-400', 'hover:text-red-400');
         btn.classList.add(isActive ? activeColor : hoverColor);
     });
 }
 
 document.addEventListener('click', async (e) => {
     const btn = e.target.closest('[data-vote]');
-    if (!btn || btn.disabled) return;
+    if (!btn) return;
 
     e.preventDefault();
     e.stopPropagation();

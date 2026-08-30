@@ -69,42 +69,80 @@
                     <span>{{ $posts->total() }} posts</span>
                     <select id="thumb-size"
                         class="bg-gray-800 border border-gray-700 rounded text-xs px-2 py-1 focus:outline-none">
-                        <option value="90">Small</option>
-                        <option value="150" selected>Medium</option>
-                        <option value="220">Large</option>
-                        <option value="320">Huge</option>
-                        <option value="450">Gigantic</option>
-                        <option value="650">Absurd</option>
+                        <option value="110">Small</option>
+                        <option value="220" selected>Medium</option>
+                        <option value="300">Large</option>
+                        <option value="400">Huge</option>
+                        <option value="550">Gigantic</option>
+                        <option value="800">Absurd</option>
                     </select>
                 </div>
             </div>
 
-                        <div id="panel-posts">
+            <div id="panel-posts">
                 <div id="thumb-grid" class="grid gap-3 items-start"
-                    style="--thumb-size: 150px; grid-template-columns: repeat(auto-fill, minmax(var(--thumb-size), 1fr));">
+                    style="--thumb-size: 220px; grid-template-columns: repeat(auto-fill, minmax(var(--thumb-size), 1fr));">
                     @forelse ($posts as $post)
                         @php $votedDirection = $votedPosts[$post->id] ?? null; @endphp
-                        <a href="{{ route('posts.show', $post) }}"
-                            class="group block rounded overflow-hidden hover:opacity-90 transition">
-                            <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail_path) }}"
-                                alt="post {{ $post->id }}" loading="lazy" class="w-full h-auto block rounded-t">
-                            <div class="flex items-center justify-center gap-1.5 text-xs text-gray-500 py-1"
-                                data-vote-widget data-post-id="{{ $post->id }}" data-voted="{{ $votedDirection }}">
-                                <button type="button" data-vote="up" {{ $votedDirection ? 'disabled' : '' }}
-                                    class="{{ $votedDirection === 'up' ? 'text-green-400' : 'hover:text-green-400' }} disabled:opacity-40 disabled:cursor-not-allowed">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3 h-3">
-                                        <path fill-rule="evenodd" d="M9.47 6.47a.75.75 0 0 1 1.06 0l4.5 4.5a.75.75 0 1 1-1.06 1.06L10 7.06l-3.97 3.97a.75.75 0 0 1-1.06-1.06l4.5-4.5Z" clip-rule="evenodd" />
-                                    </svg>
-                                </button>
-                                <span data-score>{{ $post->score }}</span>
-                                <button type="button" data-vote="down" {{ $votedDirection ? 'disabled' : '' }}
-                                    class="{{ $votedDirection === 'down' ? 'text-red-400' : 'hover:text-red-400' }} disabled:opacity-40 disabled:cursor-not-allowed">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3 h-3">
-                                        <path fill-rule="evenodd" d="M10.53 13.53a.75.75 0 0 1-1.06 0l-4.5-4.5a.75.75 0 1 1 1.06-1.06L10 11.94l3.97-3.97a.75.75 0 1 1 1.06 1.06l-4.5 4.5Z" clip-rule="evenodd" />
-                                    </svg>
-                                </button>
+                        <div class="relative group">
+                            <a href="{{ route('posts.show', $post) }}" class="block rounded overflow-hidden">
+                                <div class="flex items-center justify-center bg-gray-900 rounded-t overflow-hidden"
+                                    style="height: var(--thumb-size);">
+                                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail_path) }}"
+                                        alt="post {{ $post->id }}" loading="lazy"
+                                        class="max-w-full max-h-full object-contain">
+                                </div>
+                                <div class="flex items-center justify-center gap-1.5 text-xs text-gray-500 py-1"
+                                    data-vote-widget data-post-id="{{ $post->id }}"
+                                    data-voted="{{ $votedDirection }}">
+                                    <button type="button" data-vote="up"
+                                        class="{{ $votedDirection === 'up' ? 'text-green-400' : 'hover:text-green-400' }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                                            stroke-linejoin="round" class="w-3.5 h-3.5">
+                                            <path d="M12 20V4M5 11l7-7 7 7" />
+                                        </svg>
+                                    </button>
+                                    <span data-score>{{ $post->score }}</span>
+                                    <button type="button" data-vote="down"
+                                        class="{{ $votedDirection === 'down' ? 'text-red-400' : 'hover:text-red-400' }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                                            stroke-linejoin="round" class="w-3.5 h-3.5">
+                                            <path d="M12 4v16M5 13l7 7 7-7" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </a>
+
+                            <div
+                                class="absolute z-30 hidden group-hover:block bottom-full left-0 mb-1 w-72 bg-gray-900/95 border border-gray-700 rounded shadow-xl p-2 text-xs">
+                                <div class="flex items-center justify-between text-gray-300 mb-1">
+                                    <span class="font-medium truncate">{{ $post->uploader?->name ?? 'Anonymous' }}</span>
+                                    <span
+                                        class="text-gray-500 shrink-0 ml-2">{{ $post->created_at->diffForHumans() }}</span>
+                                </div>
+                                <div class="flex items-center gap-2 text-gray-500 mb-2">
+                                    <span>{{ strtoupper(substr($post->rating, 0, 1)) }}</span>
+                                    <span>{{ $post->humanFileSize() }}</span>
+                                    <span>.{{ $post->file_ext }}, {{ $post->width }}×{{ $post->height }}</span>
+                                </div>
+                                <div class="flex flex-wrap gap-x-2 gap-y-0.5">
+                                    @foreach ($post->tags as $tag)
+                                        @php
+                                            $hoverTagColor = match ($tag->category) {
+                                                'artist' => 'text-red-400',
+                                                'character' => 'text-green-400',
+                                                'copyright' => 'text-purple-400',
+                                                'meta' => 'text-amber-400',
+                                                default => 'text-sky-400',
+                                            };
+                                        @endphp
+                                        <span class="{{ $hoverTagColor }}">{{ $tag->name }}</span>
+                                    @endforeach
+                                </div>
                             </div>
-                        </a>
+                        </div>
                     @empty
                         <p class="col-span-full text-center text-gray-500 py-12">No posts match this search.</p>
                     @endforelse
