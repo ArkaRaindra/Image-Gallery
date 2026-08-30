@@ -22,32 +22,48 @@
             <div>
                 <h3 class="text-xs font-semibold uppercase text-gray-500 mb-2">Tags</h3>
                 <ul class="space-y-1 text-sm">
-                    @forelse ($sidebarTags as $tag)
-                        @php
-                            $tagColor = match ($tag->category) {
-                                'artist' => 'text-red-400',
-                                'character' => 'text-green-400',
-                                'copyright' => 'text-purple-400',
-                                'meta' => 'text-amber-400',
-                                default => 'text-sky-400',
-                            };
-                        @endphp
-                        <li class="flex justify-between gap-2">
-                            <a href="{{ route('posts.index', ['tags' => $tag->name]) }}"
-                                class="truncate {{ $tagColor }} hover:underline">{{ $tag->name }}</a>
-                            <span class="text-gray-600">{{ $tag->post_count }}</span>
-                        </li>
-                    @empty
+                    @if ($sidebarTags->isEmpty())
                         <li class="text-gray-600">No tags found.</li>
-                    @endforelse
+                    @endif
+                    @php
+                        $categoryOrder = ['artist', 'copyright', 'character', 'general', 'meta'];
+                        $groupedSidebarTags = $sidebarTags->groupBy('category');
+                    @endphp
+                    @foreach ($categoryOrder as $cat)
+                        @foreach (($groupedSidebarTags[$cat] ?? collect())->sortByDesc('post_count') as $tag)
+                            @php
+                                $tagColor = match ($tag->category) {
+                                    'artist' => 'text-red-400',
+                                    'character' => 'text-green-400',
+                                    'copyright' => 'text-purple-400',
+                                    'meta' => 'text-amber-400',
+                                    default => 'text-sky-400',
+                                };
+                            @endphp
+                            <li class="flex justify-between gap-2">
+                                <span class="truncate">
+                                    <a href="{{ route('posts.index', ['tags' => $tag->name, 'wiki' => 1]) }}"
+                                        class="text-gray-600 hover:text-gray-400 mr-1">?</a>
+                                    <a href="{{ route('posts.index', ['tags' => $tag->name]) }}"
+                                        class="{{ $tagColor }} hover:underline">{{ $tag->name }}</a>
+                                </span>
+                                <span class="text-gray-600 shrink-0">{{ $tag->post_count }}</span>
+                            </li>
+                        @endforeach
+                    @endforeach
                 </ul>
             </div>
 
             <div>
                 <h3 class="text-xs font-semibold uppercase text-gray-500 mb-2">Rating</h3>
+                @php
+                    $tagQueryWithoutRating = collect(explode(' ', $tagQuery))
+                        ->filter(fn($t) => $t !== '' && !str_starts_with($t, 'rating:'))
+                        ->implode(' ');
+                @endphp
                 <ul class="space-y-1 text-sm">
                     @foreach (['general' => 'General', 'sensitive' => 'Sensitive', 'questionable' => 'Questionable', 'explicit' => 'Explicit'] as $key => $label)
-                        <li><a href="{{ route('posts.index', ['tags' => trim($tagQuery . ' rating:' . $key)]) }}"
+                        <li><a href="{{ route('posts.index', ['tags' => trim($tagQueryWithoutRating . ' rating:' . $key)]) }}"
                                 class="hover:text-sky-400">{{ $label }}</a></li>
                     @endforeach
                 </ul>
@@ -86,7 +102,7 @@
                         @php $votedDirection = $votedPosts[$post->id] ?? null; @endphp
                         <div class="relative group">
                             <a href="{{ route('posts.show', $post) }}" class="block rounded overflow-hidden">
-                                <div class="flex items-center justify-center bg-gray-900 rounded-t overflow-hidden"
+                                <div class="flex items-center justify-center rounded-t overflow-hidden"
                                     style="height: var(--thumb-size);">
                                     <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail_path) }}"
                                         alt="post {{ $post->id }}" loading="lazy"
@@ -127,18 +143,24 @@
                                     <span>{{ $post->humanFileSize() }}</span>
                                     <span>.{{ $post->file_ext }}, {{ $post->width }}×{{ $post->height }}</span>
                                 </div>
+                                @php
+                                    $hoverCategoryOrder = ['artist', 'copyright', 'character', 'general', 'meta'];
+                                    $groupedHoverTags = $post->tags->groupBy('category');
+                                @endphp
                                 <div class="flex flex-wrap gap-x-2 gap-y-0.5">
-                                    @foreach ($post->tags as $tag)
-                                        @php
-                                            $hoverTagColor = match ($tag->category) {
-                                                'artist' => 'text-red-400',
-                                                'character' => 'text-green-400',
-                                                'copyright' => 'text-purple-400',
-                                                'meta' => 'text-amber-400',
-                                                default => 'text-sky-400',
-                                            };
-                                        @endphp
-                                        <span class="{{ $hoverTagColor }}">{{ $tag->name }}</span>
+                                    @foreach ($hoverCategoryOrder as $cat)
+                                        @foreach (($groupedHoverTags[$cat] ?? collect())->sortByDesc('post_count') as $tag)
+                                            @php
+                                                $hoverTagColor = match ($tag->category) {
+                                                    'artist' => 'text-red-400',
+                                                    'character' => 'text-green-400',
+                                                    'copyright' => 'text-purple-400',
+                                                    'meta' => 'text-amber-400',
+                                                    default => 'text-sky-400',
+                                                };
+                                            @endphp
+                                            <span class="{{ $hoverTagColor }}">{{ $tag->name }}</span>
+                                        @endforeach
                                     @endforeach
                                 </div>
                             </div>
@@ -215,6 +237,11 @@
                     }
                 }
             });
+
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('wiki') === '1') {
+                tabWiki?.click();
+            }
         })();
     </script>
 @endsection

@@ -10,9 +10,7 @@ use Illuminate\Support\Str;
 
 class PostController extends Controller
 {
-    public function __construct(protected PostSearchService $search)
-    {
-    }
+    public function __construct(protected PostSearchService $search) {}
 
     public function index(Request $request)
     {
@@ -28,10 +26,10 @@ class PostController extends Controller
 
         $sidebarTags = blank($tagsQuery)
             ? Tag::orderByDesc('post_count')->limit(40)->get()
-            : Tag::whereHas('posts', fn ($q) => $q->whereIn('posts.id', $matchingPostIds))
-                ->orderByDesc('post_count')
-                ->limit(40)
-                ->get();
+            : Tag::whereHas('posts', fn($q) => $q->whereIn('posts.id', $matchingPostIds))
+            ->orderByDesc('post_count')
+            ->limit(40)
+            ->get();
 
         return view('posts.index', [
             'posts' => $posts,
@@ -50,8 +48,8 @@ class PostController extends Controller
 
         $scopedIds = $this->search->search($tagsQuery)->pluck('id');
 
-        $prevId = $scopedIds->filter(fn ($id) => $id > $post->id)->min();
-        $nextId = $scopedIds->filter(fn ($id) => $id < $post->id)->max();
+        $prevId = $scopedIds->filter(fn($id) => $id > $post->id)->min();
+        $nextId = $scopedIds->filter(fn($id) => $id < $post->id)->max();
 
         return view('posts.show', [
             'post' => $post,
@@ -110,5 +108,10 @@ class PostController extends Controller
         }
 
         return Tag::where('name', $token)->exists() ? $token : null;
+    }
+
+    public function download(Post $post)
+    {
+        return \Illuminate\Support\Facades\Storage::disk('public')->download($post->file_path, $post->file_name);
     }
 }
