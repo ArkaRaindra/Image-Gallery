@@ -3,16 +3,16 @@
 @section('title', 'Home')
 
 @section('content')
-    <div class="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-6">
-        <aside class="space-y-4">
+    <div class="flex flex-col md:flex-row md:items-start gap-6">
+        <aside class="space-y-4 md:w-52 md:shrink-0 md:sticky md:top-24 md:h-[calc(100vh-6rem)] md:overflow-y-auto">
             <div>
-                <h3 class="text-xs font-semibold uppercase text-gray-500 mb-2">Search</h3>
+                <h3 class="text-xm font-semibold uppercase text-gray-900 mb-2">Search</h3>
                 <div class="relative" data-tag-autocomplete-wrapper>
                     <form method="GET" action="{{ route('posts.index') }}" class="flex gap-1">
                         <input type="text" name="tags" value="{{ $tagQuery }}"
                             placeholder="e.g. 1girl -weapon rating:general" autocomplete="off" data-tag-autocomplete
-                            class="flex-1 min-w-0 px-2 py-1.5 rounded bg-gray-800 border border-gray-700 text-sm focus:outline-none focus:border-sky-500">
-                        <button type="submit" class="px-3 rounded bg-sky-600 hover:bg-sky-500 text-sm">
+                            class="flex-1 min-w-0 px-2 py-1.5 rounded bg-white border border-gray-700 text-sm focus:outline-none focus:border-sky-500">
+                        <button type="submit" class="px-3 rounded bg-green-700 hover:bg-green-800 text-white text-sm cursor-pointer">
                             Search
                         </button>
                     </form>
@@ -20,10 +20,10 @@
             </div>
 
             <div>
-                <h3 class="text-xs font-semibold uppercase text-gray-500 mb-2">Tags</h3>
+                <h3 class="text-xm font-semibold uppercase text-gray-900 mb-2">Tags</h3>
                 <ul class="space-y-1 text-sm">
                     @if ($sidebarTags->isEmpty())
-                        <li class="text-gray-600">No tags found.</li>
+                        <li class="text-gray-900">No tags found.</li>
                     @endif
                     @php
                         $categoryOrder = ['artist', 'copyright', 'character', 'general', 'meta'];
@@ -33,17 +33,17 @@
                         @foreach (($groupedSidebarTags[$cat] ?? collect())->sortByDesc('post_count') as $tag)
                             @php
                                 $tagColor = match ($tag->category) {
-                                    'artist' => 'text-red-400',
-                                    'character' => 'text-green-400',
-                                    'copyright' => 'text-purple-400',
-                                    'meta' => 'text-amber-400',
-                                    default => 'text-sky-400',
+                                    'artist' => 'text-red-700',
+                                    'character' => 'text-green-700',
+                                    'copyright' => 'text-purple-700',
+                                    'meta' => 'text-amber-700',
+                                    default => 'text-sky-700',
                                 };
                             @endphp
                             <li class="flex justify-between gap-2">
                                 <span class="truncate">
                                     <a href="{{ route('posts.index', ['tags' => $tag->name, 'wiki' => 1]) }}"
-                                        class="text-gray-600 hover:text-gray-400 mr-1">?</a>
+                                        class="text-gray-600 hover:text-gray-900 mr-1">?</a>
                                     <a href="{{ route('posts.index', ['tags' => $tag->name]) }}"
                                         class="{{ $tagColor }} hover:underline">{{ $tag->name }}</a>
                                 </span>
@@ -55,7 +55,7 @@
             </div>
 
             <div>
-                <h3 class="text-xs font-semibold uppercase text-gray-500 mb-2">Rating</h3>
+                <h3 class="text-xm font-semibold uppercase text-gray-900 mb-2">Rating</h3>
                 @php
                     $tagQueryWithoutRating = collect(explode(' ', $tagQuery))
                         ->filter(fn($t) => $t !== '' && !str_starts_with($t, 'rating:'))
@@ -64,27 +64,27 @@
                 <ul class="space-y-1 text-sm">
                     @foreach (['general' => 'General', 'sensitive' => 'Sensitive', 'questionable' => 'Questionable', 'explicit' => 'Explicit'] as $key => $label)
                         <li><a href="{{ route('posts.index', ['tags' => trim($tagQueryWithoutRating . ' rating:' . $key)]) }}"
-                                class="hover:text-sky-400">{{ $label }}</a></li>
+                                class="hover:text-gray-900">{{ $label }}</a></li>
                     @endforeach
                 </ul>
             </div>
         </aside>
 
-        <main>
+        <main class="flex-1 min-w-0">
             <div class="flex items-center justify-between mb-3 border-b border-gray-800 pb-2">
                 <div class="flex items-center gap-4">
                     <button id="tab-posts" type="button"
-                        class="tab-btn pb-2 border-b-2 text-sky-400 border-sky-400">Posts</button>
+                        class="tab-btn pb-2 border-b-2 text-gray-900 border-gray-900">Posts</button>
                     @if ($singleTagName)
                         <button id="tab-wiki" type="button" data-tag="{{ $singleTagName }}"
-                            class="tab-btn pb-2 border-b-2 text-gray-500 border-transparent hover:text-gray-300">Wiki</button>
+                            class="tab-btn pb-2 border-b-2 text-gray-900 border-transparent hover:text-gray-900 cursor-pointer">Wiki</button>
                     @endif
                 </div>
 
                 <div class="flex items-center gap-3 text-sm text-gray-500">
                     <span>{{ $posts->total() }} posts</span>
                     <select id="thumb-size"
-                        class="bg-gray-800 border border-gray-700 rounded text-xs px-2 py-1 focus:outline-none">
+                        class="bg-white border border-gray-700 rounded text-xs px-2 py-1 focus:outline-none">
                         <option value="110">Small</option>
                         <option value="220" selected>Medium</option>
                         <option value="300">Large</option>
@@ -97,7 +97,7 @@
 
             <div id="panel-posts">
                 <div id="thumb-grid" class="grid gap-3 items-start"
-                    style="--thumb-size: 220px; grid-template-columns: repeat(auto-fill, minmax(var(--thumb-size), 1fr));">
+                    style="--thumb-size: 220px; grid-template-columns: repeat(auto-fill, minmax(min(var(--thumb-size), 100%), 1fr));">
                     @forelse ($posts as $post)
                         @php $votedDirection = $votedPosts[$post->id] ?? null; @endphp
                         <div class="relative group">
@@ -112,7 +112,7 @@
                                     data-vote-widget data-post-id="{{ $post->id }}"
                                     data-voted="{{ $votedDirection }}">
                                     <button type="button" data-vote="up"
-                                        class="{{ $votedDirection === 'up' ? 'text-green-400' : 'hover:text-green-400' }}">
+                                        class="{{ $votedDirection === 'up' ? 'text-green-800' : 'hover:text-green-700' }}">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                                             stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
                                             stroke-linejoin="round" class="w-3.5 h-3.5">
@@ -121,7 +121,7 @@
                                     </button>
                                     <span data-score>{{ $post->score }}</span>
                                     <button type="button" data-vote="down"
-                                        class="{{ $votedDirection === 'down' ? 'text-red-400' : 'hover:text-red-400' }}">
+                                        class="{{ $votedDirection === 'down' ? 'text-red-800' : 'hover:text-red-700' }}">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                                             stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
                                             stroke-linejoin="round" class="w-3.5 h-3.5">
@@ -166,7 +166,7 @@
                             </div>
                         </div>
                     @empty
-                        <p class="col-span-full text-center text-gray-500 py-12">No posts match this search.</p>
+                        <p class="col-span-full text-center text-gray-900 py-12">No posts match this search.</p>
                     @endforelse
                 </div>
 
@@ -177,7 +177,7 @@
 
             @if ($singleTagName)
                 <div id="panel-wiki" class="hidden">
-                    <p class="text-sm text-gray-500">Loading…</p>
+                    <p class="text-sm text-gray-900">Loading…</p>
                 </div>
             @endif
         </main>
@@ -202,10 +202,10 @@
             }
 
             function activate(activeTab, inactiveTab) {
-                activeTab.classList.add('text-sky-400', 'border-sky-400');
+                activeTab.classList.add('text-gray-900', 'border-gray-900');
                 activeTab.classList.remove('text-gray-500', 'border-transparent');
                 if (inactiveTab) {
-                    inactiveTab.classList.remove('text-sky-400', 'border-sky-400');
+                    inactiveTab.classList.remove('text-gray-900', 'border-gray-400');
                     inactiveTab.classList.add('text-gray-500', 'border-transparent');
                 }
             }
