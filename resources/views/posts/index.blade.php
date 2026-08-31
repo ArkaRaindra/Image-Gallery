@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="flex flex-col md:flex-row md:items-start gap-6">
-        <aside class="space-y-4 md:w-52 md:shrink-0 md:sticky md:top-24 md:h-[calc(100vh-6rem)] md:overflow-y-auto">
+        <aside class="space-y-4 md:w-52 md:shrink-0 md:sticky md:top-4 order-last md:order-none">
             <div>
                 <h3 class="text-xm font-semibold uppercase text-gray-900 mb-2">Search</h3>
                 <div class="relative" data-tag-autocomplete-wrapper>
@@ -12,7 +12,8 @@
                         <input type="text" name="tags" value="{{ $tagQuery }}"
                             placeholder="e.g. 1girl -weapon rating:general" autocomplete="off" data-tag-autocomplete
                             class="flex-1 min-w-0 px-2 py-1.5 rounded bg-white border border-gray-700 text-sm focus:outline-none focus:border-sky-500">
-                        <button type="submit" class="px-3 rounded bg-green-700 hover:bg-green-800 text-white text-sm cursor-pointer">
+                        <button type="submit"
+                            class="px-3 rounded bg-green-700 hover:bg-green-800 text-white text-sm cursor-pointer">
                             Search
                         </button>
                     </form>
@@ -86,7 +87,7 @@
                     <select id="thumb-size"
                         class="bg-white border border-gray-700 rounded text-xs px-2 py-1 focus:outline-none">
                         <option value="110">Small</option>
-                        <option value="220" selected>Medium</option>
+                        <option value="200" selected>Medium</option>
                         <option value="300">Large</option>
                         <option value="400">Huge</option>
                         <option value="550">Gigantic</option>

@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="flex flex-col md:flex-row md:items-start gap-6">
-        <aside class="space-y-4 text-sm md:w-52 md:shrink-0 md:sticky md:top-24 md:h-[calc(100vh-6rem)] md:overflow-y-auto">
+        <aside class="space-y-4 text-sm md:w-52 md:shrink-0 md:sticky md:top-4 order-last md:order-none">
             <div>
                 <h3 class="text-xm font-semibold uppercase text-gray-900 mb-2">Search</h3>
                 <div class="relative" data-tag-autocomplete-wrapper>
@@ -47,7 +47,7 @@
             @endforeach
 
             <div>
-                <h3 class="text-xm font-semibold uppercase text-gray9500 mb-2">Information</h3>
+                <h3 class="text-xm font-semibold uppercase text-gray-900 mb-2">Information</h3>
                 @php
                     $ratingColor = match ($post->rating) {
                         'sensitive' => 'text-sky-700',
@@ -99,7 +99,8 @@
                 <h3 class="text-xm font-semibold uppercase text-gray-900 mb-2">Options</h3>
                 <ul class="space-y-1">
                     <li>
-                        <button type="button" id="resize-window" class="text-gray-700 hover:underline text-left cursor-pointer">
+                        <button type="button" id="resize-window"
+                            class="text-gray-700 hover:underline text-left cursor-pointer">
                             Resize to window
                         </button>
                     </li>
@@ -112,7 +113,6 @@
                     </li>
                 </ul>
             </div>
-        </aside>
         </aside>
 
         <main class="flex-1 min-w-0">
