@@ -34,11 +34,14 @@
                         <h3 class="text-xm font-semibold uppercase text-gray-900 mb-2">{{ $label }}</h3>
                         <ul class="space-y-1">
                             @foreach ($tagsInCategory as $tag)
-                                <li>
-                                    <a href="{{ route('posts.index', ['tags' => $tag->name, 'wiki' => 1]) }}"
-                                        class="text-gray-600 hover:text-gray-900 mr-1">?</a>
-                                    <a href="{{ route('posts.index', ['tags' => $tag->name]) }}"
-                                        class="{{ $catColor }} hover:underline">{{ $tag->name }}</a>
+                                <li class="flex justify-between gap-2">
+                                    <span class="truncate">
+                                        <a href="{{ route('posts.index', ['tags' => $tag->name, 'wiki' => 1]) }}"
+                                            class="text-gray-600 hover:text-gray-900 mr-1">?</a>
+                                        <a href="{{ route('posts.index', ['tags' => $tag->name]) }}"
+                                            class="{{ $catColor }} hover:underline">{{ $tag->name }}</a>
+                                    </span>
+                                    <span class="text-gray-600 shrink-0">{{ $tag->post_count }}</span>
                                 </li>
                             @endforeach
                         </ul>
@@ -63,9 +66,9 @@
                     <li>Size: {{ $post->humanFileSize() }} .{{ $post->file_ext }}
                         ({{ $post->width }}×{{ $post->height }})</li>
                     @if ($post->source)
-                        <li> <a href="{{ $post->source }}" target="_blank"
-                                class="text-green-900 hover:underline">Source</a>
-                        </li>
+                    <li> Source: <a href="{{ $post->source }}" target="_blank"
+                                class="text-green-900 hover:underline">{{ $post->source }}</a>
+                    </li>
                     @endif
                     <li>Rating: <span class="{{ $ratingColor }}">{{ ucfirst($post->rating) }}</span></li>
                     <li class="flex items-center gap-2">

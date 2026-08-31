@@ -21,7 +21,8 @@ class PostForm
                     ->disk('public')
                     ->visibility('public')
                     ->directory('posts')
-                    ->required(),
+                    ->required()
+                    ->columnSpanFull(),
 
                 Select::make('rating')
                     ->options([

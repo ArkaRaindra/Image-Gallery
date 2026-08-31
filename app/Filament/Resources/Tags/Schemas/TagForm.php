@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Tags\Schemas;
 
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -29,7 +30,10 @@ class TagForm
                     ->required()
                     ->default('general'),
 
-                Textarea::make('description')
+                RichEditor::make('description')
+                    ->label('Wiki content')
+                    ->fileAttachmentsDisk('public')
+                    ->fileAttachmentsDirectory('wiki')
                     ->columnSpanFull(),
             ]);
     }

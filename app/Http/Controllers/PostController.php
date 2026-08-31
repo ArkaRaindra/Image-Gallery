@@ -31,12 +31,14 @@ class PostController extends Controller
             ->limit(40)
             ->get();
 
+        $singleTag = $this->resolveSingleTag($tagsQuery);
+
         return view('posts.index', [
             'posts' => $posts,
             'tagQuery' => $tagsQuery,
             'sidebarTags' => $sidebarTags,
-            'singleTagName' => $this->resolveSingleTagName($tagsQuery),
-            'votedPosts' => session('voted_posts', []),
+            'singleTagName' => $singleTag?->name,
+            'singleTagCategory' => $singleTag?->category,
         ]);
     }
 
@@ -93,7 +95,7 @@ class PostController extends Controller
         ]);
     }
 
-    protected function resolveSingleTagName(string $tagsQuery): ?string
+    protected function resolveSingleTag(string $tagsQuery): ?Tag
     {
         $tokens = collect(explode(' ', trim($tagsQuery)))->filter();
 
@@ -107,11 +109,25 @@ class PostController extends Controller
             return null;
         }
 
-        return Tag::where('name', $token)->exists() ? $token : null;
+        return Tag::where('name', $token)->first();
     }
 
     public function download(Post $post)
     {
-        return \Illuminate\Support\Facades\Storage::disk('public')->download($post->file_path, $post->file_name);
+        $post->load('tags');
+
+        $grouped = $post->tags->groupBy('category');
+
+        $character = ($grouped->get('character', collect())->pluck('name')->join('_'));
+        $copyright = ($grouped->get('copyright', collect())->pluck('name')->join('_'));
+        $artist = ($grouped->get('artist', collect())->pluck('name')->join('_'));
+        $prefix = collect([$character, $copyright, $artist ? 'drawn_by_'.$artist : null])->filter()->implode('_');
+
+        $baseName = pathinfo($post->file_name, PATHINFO_FILENAME);
+        $extension = pathinfo($post->file_name, PATHINFO_EXTENSION);
+
+        $fileName = '__'.$prefix.'__'.$baseName.'.'.$extension;
+
+        return \Illuminate\Support\Facades\Storage::disk('public')->download($post->file_path, $fileName);
     }
 }

@@ -26,8 +26,8 @@
         </div>
         <div class="bg-green-700/70 border-t border-green-300">
             <div class="w-full px-6 py-1.5 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-white-400">
-                <a href="{{ route('posts.index') }}" class="hover:text-gray-900">Listing</a>
-                <a href="/admin/posts/create" class="hover:text-gray-900">Upload</a>
+                <a href="{{ route('posts.index') }}" class="hover:text-gray-200 cursor-pointer">Listing</a>
+                <a href="/admin/posts/create" class="hover:text-gray-200 cursor-pointer">Upload</a>
                 <span class="cursor-not-allowed">Hot</span>
                 <span class="cursor-not-allowed">Changes</span>
                 <span class="cursor-not-allowed">Help</span>
