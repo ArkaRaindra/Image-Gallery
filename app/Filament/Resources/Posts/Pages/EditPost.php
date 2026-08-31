@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Posts\Pages;
 
 use App\Filament\Resources\Posts\PostResource;
+use App\Models\Tag;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 
@@ -20,5 +21,10 @@ class EditPost extends EditRecord
         return [
             DeleteAction::make(),
         ];
+    }
+
+    protected function afterSave(): void
+    {
+        Tag::recalculateAllPostCounts();
     }
 }

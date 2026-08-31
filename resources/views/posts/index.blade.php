@@ -65,7 +65,7 @@
                 <ul class="space-y-1 text-sm">
                     @foreach (['general' => 'General', 'sensitive' => 'Sensitive', 'questionable' => 'Questionable', 'explicit' => 'Explicit'] as $key => $label)
                         <li><a href="{{ route('posts.index', ['tags' => trim($tagQueryWithoutRating . ' rating:' . $key)]) }}"
-                                class="hover:text-gray-900">{{ $label }}</a></li>
+                                class="hover:text-gray-950">{{ $label }}</a></li>
                     @endforeach
                 </ul>
             </div>
@@ -151,7 +151,7 @@
                             <div
                                 class="absolute z-30 hidden group-hover:block bottom-full left-0 mb-1 w-72 bg-gray-900/95 border border-gray-700 rounded shadow-xl p-2 text-xs">
                                 <div class="flex items-center justify-between text-gray-300 mb-1">
-                                    <span class="font-medium truncate">{{ $post->uploader?->name ?? 'Anonymous' }}</span>
+                                    <span class="font-medium truncate">{{ $post->uploader?->name ?? 'Admin' }}</span>
                                     <span
                                         class="text-gray-500 shrink-0 ml-2">{{ $post->created_at->diffForHumans() }}</span>
                                 </div>

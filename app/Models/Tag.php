@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class Tag extends Model
@@ -38,5 +39,16 @@ class Tag extends Model
     public function scopeCategory($query, string $category)
     {
         return $query->where('category', $category);
+    }
+
+    public static function recalculateAllPostCounts(): void
+    {
+        DB::statement('
+            UPDATE tags
+            LEFT JOIN (
+                SELECT tag_id, COUNT(*) AS cnt FROM post_tags GROUP BY tag_id
+            ) counts ON counts.tag_id = tags.id
+            SET tags.post_count = COALESCE(counts.cnt, 0)
+        ');
     }
 }

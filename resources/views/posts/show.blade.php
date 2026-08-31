@@ -61,7 +61,7 @@
                 @endphp
                 <ul class="space-y-1 text-gray-900">
                     <li>ID: {{ $post->id }}</li>
-                    <li>Uploader: {{ $post->uploader?->name ?? 'Anonymous' }}</li>
+                    <li>Uploader: {{ $post->uploader?->name ?? 'Admin' }}</li>
                     <li>Date: {{ $post->created_at->diffForHumans() }}</li>
                     <li>Size: {{ $post->humanFileSize() }} .{{ $post->file_ext }}
                         ({{ $post->width }}×{{ $post->height }})</li>

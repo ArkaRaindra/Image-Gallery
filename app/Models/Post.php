@@ -32,6 +32,13 @@ class Post extends Model
         'is_approved' => 'boolean',
     ];
 
+    protected static function booted(): void
+    {
+        static::deleted(function (self $post) {
+            Tag::recalculateAllPostCounts();
+        });
+    }
+
     public function uploader(): BelongsTo
     {
         return $this->belongsTo(User::class, 'uploader_id');

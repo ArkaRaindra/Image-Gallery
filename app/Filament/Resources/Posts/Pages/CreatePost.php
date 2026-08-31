@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Posts\Pages;
 
 use App\Filament\Resources\Posts\PostResource;
+use App\Models\Tag;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Storage;
 
@@ -32,6 +33,15 @@ class CreatePost extends CreateRecord
 
         $data['thumbnail_path'] = $path;
 
+        if (auth()->check()) {
+            $data['uploader_id'] = auth()->id();
+        }
+
         return $data;
+    }
+
+    protected function afterSave(): void
+    {
+        Tag::recalculateAllPostCounts();
     }
 }
