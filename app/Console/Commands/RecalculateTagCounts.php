@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Tag;
 use Illuminate\Console\Command;
 
+//php artisan tags:recalculate-counts
 class RecalculateTagCounts extends Command
 {
     protected $signature = 'tags:recalculate-counts';
