@@ -42,16 +42,16 @@ class PostController extends Controller
         ]);
     }
 
-    public function show(Request $request, Post $post)
+        public function show(Request $request, Post $post)
     {
-        $post->load('tags', 'uploader');
+        $post->load('tags', 'uploader', 'comments');
 
         $tagsQuery = $request->string('tags')->toString();
 
         $scopedIds = $this->search->search($tagsQuery)->pluck('id');
 
-        $prevId = $scopedIds->filter(fn($id) => $id > $post->id)->min();
-        $nextId = $scopedIds->filter(fn($id) => $id < $post->id)->max();
+        $prevId = $scopedIds->filter(fn ($id) => $id > $post->id)->min();
+        $nextId = $scopedIds->filter(fn ($id) => $id < $post->id)->max();
 
         return view('posts.show', [
             'post' => $post,

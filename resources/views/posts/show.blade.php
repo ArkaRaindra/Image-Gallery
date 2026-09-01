@@ -66,9 +66,9 @@
                     <li>Size: {{ $post->humanFileSize() }} .{{ $post->file_ext }}
                         ({{ $post->width }}×{{ $post->height }})</li>
                     @if ($post->source)
-                    <li> Source: <a href="{{ $post->source }}" target="_blank"
+                        <li> Source: <a href="{{ $post->source }}" target="_blank"
                                 class="text-green-900 hover:underline">{{ $post->source }}</a>
-                    </li>
+                        </li>
                     @endif
                     <li>Rating: <span class="{{ $ratingColor }}">{{ ucfirst($post->rating) }}</span></li>
                     <li class="flex items-center gap-2">
@@ -145,56 +145,72 @@
             </div>
 
             @if ($post->description)
-                <div class="bg-white border border-gray-950 rounded p-3 text-sm text-gray-900">
+                <div class="bg-white border border-gray-950 rounded p-3 text-sm text-gray-900 mb-4">
                     {{ $post->description }}
                 </div>
             @endif
+
+            <div id="comments">
+                <h3 class="text-xm font-semibold uppercase text-gray-900 mb-3">
+                    Comments ({{ $post->comments->count() }})
+                </h3>
+
+                <div class="space-y-3 mb-4">
+                    @forelse ($post->comments as $comment)
+                        <div class="bg-white border border-gray-950 rounded p-3">
+                            <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
+                                <span class="font-medium text-gray-900">{{ $comment->author_name }}</span>
+                                <span>{{ $comment->created_at->diffForHumans() }}</span>
+                            </div>
+                            <p class="text-sm text-gray-800 whitespace-pre-line">{{ $comment->body }}</p>
+                        </div>
+                    @empty
+                        <p class="text-sm text-gray-500">There are no comments.</p>
+                    @endforelse
+                </div>
+
+                <form method="POST" action="{{ route('comments.store', $post) }}" class="space-y-2">
+                    @csrf
+                    <input type="hidden" name="tags" value="{{ $tagQuery }}">
+                    <input type="text" name="author_name" placeholder="Name (optional)"
+                        class="w-full px-2 py-1.5 rounded bg-white border border-gray-700 text-sm focus:outline-none focus:border-sky-500">
+                    <textarea name="body" rows="3" required placeholder="Leave a comment..."
+                        class="w-full px-2 py-1.5 rounded bg-white border border-gray-700 text-sm focus:outline-none focus:border-sky-500"></textarea>
+                    @error('body')
+                        <p class="text-xs text-red-600">{{ $message }}</p>
+                    @enderror
+                    <button type="submit"
+                        class="px-3 py-1.5 rounded bg-green-700 hover:bg-green-800 text-white text-sm cursor-pointer">
+                        Post Comment
+                    </button>
+                </form>
+            </div>
         </main>
     </div>
-
-    <div id="lightbox-backdrop" class="hidden fixed inset-0 bg-black/90 z-40"></div>
 
     <script>
         (function() {
             const img = document.getElementById('post-image');
-            const backdrop = document.getElementById('lightbox-backdrop');
             const btn = document.getElementById('resize-window');
-            const defaultClass = 'w-full max-h-[80vh] object-contain rounded mx-auto';
+            const defaultClasses = ['w-full', 'max-h-[80vh]', 'object-contain', 'rounded', 'mx-auto'];
+            const enlargedClasses = ['w-full', 'max-h-none', 'object-contain', 'rounded', 'mx-auto'];
             let active = false;
 
             function activate() {
                 active = true;
-                backdrop.classList.remove('hidden');
-                img.removeAttribute('class');
-                img.style.position = 'fixed';
-                img.style.top = '50%';
-                img.style.left = '50%';
-                img.style.transform = 'translate(-50%, -50%)';
-                img.style.maxWidth = '96vw';
-                img.style.maxHeight = '96vh';
-                img.style.width = 'auto';
-                img.style.height = 'auto';
-                img.style.zIndex = '50';
-                img.style.margin = '0';
-                img.style.borderRadius = '0.25rem';
+                img.className = enlargedClasses.join(' ');
+                if (btn) btn.textContent = 'Fit to window';
             }
 
             function deactivate() {
                 active = false;
-                backdrop.classList.add('hidden');
-                img.removeAttribute('style');
-                img.className = defaultClass;
+                img.className = defaultClasses.join(' ');
+                if (btn) btn.textContent = 'Resize to window';
             }
 
             btn?.addEventListener('click', (e) => {
                 e.preventDefault();
                 active ? deactivate() : activate();
-            });
-
-            backdrop?.addEventListener('click', deactivate);
-
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && active) deactivate();
             });
         })();
     </script>
