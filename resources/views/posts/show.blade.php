@@ -150,7 +150,7 @@
                 </div>
             @endif
 
-            <div id="comments">
+                        <div id="comments">
                 <h3 class="text-xm font-semibold uppercase text-gray-900 mb-3">
                     Comments ({{ $post->comments->count() }})
                 </h3>
@@ -162,28 +162,57 @@
                                 <span class="font-medium text-gray-900">{{ $comment->author_name }}</span>
                                 <span>{{ $comment->created_at->diffForHumans() }}</span>
                             </div>
-                            <p class="text-sm text-gray-800 whitespace-pre-line">{{ $comment->body }}</p>
+                            <div class="text-sm text-gray-800">
+                                {!! \App\Support\SimpleMarkdown::toHtml($comment->body) !!}
+                            </div>
                         </div>
                     @empty
                         <p class="text-sm text-gray-500">There are no comments.</p>
                     @endforelse
                 </div>
 
-                <form method="POST" action="{{ route('comments.store', $post) }}" class="space-y-2">
-                    @csrf
-                    <input type="hidden" name="tags" value="{{ $tagQuery }}">
-                    <input type="text" name="author_name" placeholder="Name (optional)"
-                        class="w-full px-2 py-1.5 rounded bg-white border border-gray-700 text-sm focus:outline-none focus:border-sky-500">
-                    <textarea name="body" rows="3" required placeholder="Leave a comment..."
-                        class="w-full px-2 py-1.5 rounded bg-white border border-gray-700 text-sm focus:outline-none focus:border-sky-500"></textarea>
-                    @error('body')
-                        <p class="text-xs text-red-600">{{ $message }}</p>
-                    @enderror
-                    <button type="submit"
-                        class="px-3 py-1.5 rounded bg-green-700 hover:bg-green-800 text-white text-sm cursor-pointer">
-                        Post Comment
-                    </button>
-                </form>
+                @auth
+                    <form method="POST" action="{{ route('comments.store', $post) }}" class="space-y-2">
+                        @csrf
+                        <input type="hidden" name="tags" value="{{ $tagQuery }}">
+
+                        <div class="border border-gray-700 rounded overflow-hidden">
+                            <div class="flex items-center gap-1 bg-gray-100 border-b border-gray-300 px-2 py-1 text-xs">
+                                <button type="button" id="cm-preview-btn" class="px-2 py-1 rounded hover:bg-gray-200 cursor-pointer">👁 Preview</button>
+                                <span class="w-px h-4 bg-gray-300 mx-1"></span>
+                                <button type="button" id="cm-bold-btn" class="px-2 py-1 rounded hover:bg-gray-200 font-bold cursor-pointer">B</button>
+                                <button type="button" id="cm-italic-btn" class="px-2 py-1 rounded hover:bg-gray-200 italic cursor-pointer">I</button>
+                                <button type="button" id="cm-link-btn" class="px-2 py-1 rounded hover:bg-gray-200 cursor-pointer">🔗</button>
+                                <button type="button" id="cm-image-btn" class="px-2 py-1 rounded hover:bg-gray-200 cursor-pointer">🖼</button>
+                                <div class="relative">
+                                    <button type="button" id="cm-emoji-btn" class="px-2 py-1 rounded hover:bg-gray-200 cursor-pointer">😊</button>
+                                    <div id="cm-emoji-picker"
+                                        class="hidden absolute z-40 top-full left-0 mt-1 w-56 bg-white border border-gray-300 rounded shadow-lg p-2 grid grid-cols-8 gap-1 text-lg">
+                                    </div>
+                                </div>
+                                <input type="file" id="cm-image-input" accept="image/*" class="hidden">
+                            </div>
+
+                            <textarea id="cm-textarea" name="body" rows="4" required placeholder="Post a comment"
+                                class="w-full px-2 py-2 text-sm focus:outline-none">{{ old('body') }}</textarea>
+
+                            <div id="cm-preview" class="hidden px-2 py-2 text-sm border-t border-gray-300 bg-gray-50"></div>
+                        </div>
+
+                        @error('body')
+                            <p class="text-xs text-red-600">{{ $message }}</p>
+                        @enderror
+
+                        <button type="submit"
+                            class="px-3 py-1.5 rounded bg-green-700 hover:bg-green-800 text-white text-sm cursor-pointer">
+                            Comment
+                        </button>
+                    </form>
+                @else
+                    <p class="text-sm text-gray-600">
+                        <a href="{{ route('login') }}" class="text-sky-700 hover:underline">Login</a> to leave a comment.
+                    </p>
+                @endauth
             </div>
         </main>
     </div>
@@ -211,6 +240,124 @@
             btn?.addEventListener('click', (e) => {
                 e.preventDefault();
                 active ? deactivate() : activate();
+            });
+        })();
+
+        (function() {
+            const textarea = document.getElementById('cm-textarea');
+            if (!textarea) return;
+
+            const previewBtn = document.getElementById('cm-preview-btn');
+            const previewBox = document.getElementById('cm-preview');
+            const boldBtn = document.getElementById('cm-bold-btn');
+            const italicBtn = document.getElementById('cm-italic-btn');
+            const linkBtn = document.getElementById('cm-link-btn');
+            const imageBtn = document.getElementById('cm-image-btn');
+            const imageInput = document.getElementById('cm-image-input');
+            const emojiBtn = document.getElementById('cm-emoji-btn');
+            const emojiPicker = document.getElementById('cm-emoji-picker');
+
+            const EMOJIS = ['😀', '😂', '😅', '😊', '😍', '😎', '🤔', '😢', '😭', '😡', '👍', '👎', '👏', '🙏', '🔥', '✨', '🎉', '❤️', '💀', '😴', '😱', '🥺', '😏', '👀'];
+
+            emojiPicker.innerHTML = EMOJIS.map((e) => `<button type="button" class="hover:bg-gray-100 rounded" data-emoji="${e}">${e}</button>`).join('');
+
+            function escapeHtml(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            function renderMiniMarkdown(text) {
+                let html = escapeHtml(text);
+                html = html.replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full rounded my-1">');
+                html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener" class="text-sky-700 underline">$1</a>');
+                html = html.replace(/\*\*(.+?)\*\*/gs, '<strong>$1</strong>');
+                html = html.replace(/\*(.+?)\*/gs, '<em>$1</em>');
+                return html.replace(/\n/g, '<br>');
+            }
+
+            function wrapSelection(before, after = before) {
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const selected = textarea.value.slice(start, end);
+                textarea.setRangeText(before + selected + after, start, end, 'end');
+                textarea.focus();
+            }
+
+            function insertAtCursor(text) {
+                const start = textarea.selectionStart;
+                textarea.setRangeText(text, start, textarea.selectionEnd, 'end');
+                textarea.focus();
+            }
+
+            boldBtn?.addEventListener('click', () => wrapSelection('**'));
+            italicBtn?.addEventListener('click', () => wrapSelection('*'));
+
+            linkBtn?.addEventListener('click', () => {
+                const url = prompt('Enter URL:');
+                if (!url) return;
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const selected = textarea.value.slice(start, end) || 'link text';
+                textarea.setRangeText(`[${selected}](${url})`, start, end, 'end');
+                textarea.focus();
+            });
+
+            imageBtn?.addEventListener('click', () => imageInput.click());
+
+            imageInput?.addEventListener('change', async () => {
+                const file = imageInput.files[0];
+                if (!file) return;
+
+                const formData = new FormData();
+                formData.append('image', file);
+
+                try {
+                    const res = await fetch('{{ route('comments.upload-image') }}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'Accept': 'application/json',
+                        },
+                        body: formData,
+                    });
+                    const data = await res.json();
+                    if (data.url) {
+                        insertAtCursor(`![](${data.url})`);
+                    }
+                } catch (e) {
+                    alert('Image upload failed.');
+                } finally {
+                    imageInput.value = '';
+                }
+            });
+
+            emojiBtn?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                emojiPicker.classList.toggle('hidden');
+            });
+
+            document.addEventListener('click', () => emojiPicker.classList.add('hidden'));
+
+            emojiPicker?.addEventListener('click', (e) => {
+                const emoji = e.target.closest('[data-emoji]');
+                if (!emoji) return;
+                insertAtCursor(emoji.dataset.emoji);
+            });
+
+            let previewOn = false;
+            previewBtn?.addEventListener('click', () => {
+                previewOn = !previewOn;
+                if (previewOn) {
+                    previewBox.innerHTML = renderMiniMarkdown(textarea.value) || '<span class="text-gray-400">Nothing to preview.</span>';
+                    previewBox.classList.remove('hidden');
+                    textarea.classList.add('hidden');
+                    previewBtn.textContent = 'Edit';
+                } else {
+                    previewBox.classList.add('hidden');
+                    textarea.classList.remove('hidden');
+                    previewBtn.textContent = '👁 Preview';
+                }
             });
         })();
     </script>
