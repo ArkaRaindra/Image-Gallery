@@ -157,7 +157,7 @@
 
                 <div class="space-y-3 mb-4">
                     @forelse ($post->comments as $comment)
-                        <div class="bg-white border border-gray-950 rounded p-3">
+                        <div class="rounded p-3">
                             <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
                                 <span class="font-medium text-gray-900">{{ $comment->author_name }}</span>
                                 <span>{{ $comment->created_at->diffForHumans() }}</span>
@@ -194,7 +194,7 @@
                             </div>
 
                             <textarea id="cm-textarea" name="body" rows="4" required placeholder="Post a comment"
-                                class="w-full px-2 py-2 text-sm focus:outline-none">{{ old('body') }}</textarea>
+                                class="w-full px-2 py-2 bg-white text-sm focus:outline-none">{{ old('body') }}</textarea>
 
                             <div id="cm-preview" class="hidden px-2 py-2 text-sm border-t border-gray-300 bg-gray-50"></div>
                         </div>

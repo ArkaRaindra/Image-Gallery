@@ -18,12 +18,12 @@
             </a>
 
             @auth
-                <a href="{{ route('account.show') }}" class="text-green-900">My Account</a>
+                <a href="{{ route('account.show') }}" class="text-green-900 {{ request()->routeIs('account.*') ? 'font-bold text-base' : '' }}">My Account</a>
             @else
                 <a href="{{ route('login') }}" class="text-red-400">Login</a>
             @endauth
 
-            <a href="{{ route('posts.index') }}" class="text-green-900">Posts</a>
+            <a href="{{ route('posts.index') }}" class="text-green-900 {{ request()->routeIs('posts.index') || request()->routeIs('posts.show') ? 'font-bold text-base' : '' }}">Posts</a>
             <span class="text-gray-600 cursor-not-allowed">Comments</span>
             <span class="text-gray-600 cursor-not-allowed">Notes</span>
             <span class="text-gray-600 cursor-not-allowed">Artists</span>
@@ -40,7 +40,7 @@
                     <a href="{{ route('login') }}" class="hover:text-gray-200 cursor-pointer">Login</a>
                     <span class="cursor-not-allowed">Forgot password</span>
                 @else
-                    <a href="{{ route('posts.index') }}" class="hover:text-gray-200 cursor-pointer">Listing</a>
+                    <a href="{{ route('posts.index') }}" class="hover:text-gray-200 cursor-pointer {{ request()->routeIs('posts.index') || request()->routeIs('posts.show') ? 'font-bold text-gray-200' : '' }}">Listing</a>
                     <a href="/admin/posts/create" class="hover:text-gray-200 cursor-pointer">Upload</a>
                     <span class="cursor-not-allowed">Hot</span>
                     @auth

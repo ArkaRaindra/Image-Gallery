@@ -149,7 +149,7 @@
                             </a>
 
                             <div
-                                class="absolute z-30 hidden group-hover:block bottom-full left-0 mb-1 w-72 bg-gray-900/95 border border-gray-700 rounded shadow-xl p-2 text-xs">
+                                class="absolute z-30 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-100 delay-200 group-hover:delay-75 bottom-full left-0 mb-1 w-72 bg-gray-900/95 border border-gray-700 rounded shadow-xl p-2 text-xs">
                                 <div class="flex items-center justify-between text-gray-300 mb-1">
                                     <span class="font-medium truncate">{{ $post->uploader?->name ?? 'Admin' }}</span>
                                     <span
@@ -176,7 +176,8 @@
                                                     default => 'text-sky-400',
                                                 };
                                             @endphp
-                                            <span class="{{ $hoverTagColor }}">{{ $tag->name }}</span>
+                                            <a href="{{ route('posts.index', ['tags' => $tag->name]) }}"
+                                                class="{{ $hoverTagColor }} hover:underline">{{ $tag->name }}</a>
                                         @endforeach
                                     @endforeach
                                 </div>
