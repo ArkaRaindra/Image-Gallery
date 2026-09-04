@@ -178,13 +178,26 @@
 
                 <div class="space-y-3 mb-4">
                     @forelse ($post->comments as $comment)
-                        <div class="rounded p-3">
-                            <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
-                                <span class="font-medium text-gray-900">{{ $comment->author_name }}</span>
-                                <span>{{ $comment->created_at->diffForHumans() }}</span>
+                        <div class="rounded p-3 flex gap-3">
+                            <div
+                                class="w-10 h-10 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center shrink-0">
+                                @if ($comment->user?->avatarUrl())
+                                    <img src="{{ $comment->user->avatarUrl() }}" alt="{{ $comment->author_name }}"
+                                        class="w-full h-full object-cover">
+                                @else
+                                    <span class="text-sm font-bold text-gray-600">
+                                        {{ strtoupper(substr($comment->author_name, 0, 1)) }}
+                                    </span>
+                                @endif
                             </div>
-                            <div class="text-sm text-gray-800">
-                                {!! \App\Support\SimpleMarkdown::toHtml($comment->body) !!}
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
+                                    <span class="font-medium text-gray-900">{{ $comment->author_name }}</span>
+                                    <span>{{ $comment->created_at->diffForHumans() }}</span>
+                                </div>
+                                <div class="text-sm text-gray-800">
+                                    {!! \App\Support\SimpleMarkdown::toHtml($comment->body) !!}
+                                </div>
                             </div>
                         </div>
                     @empty

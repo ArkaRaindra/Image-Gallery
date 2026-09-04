@@ -44,7 +44,7 @@ class PostController extends Controller
 
         public function show(Request $request, Post $post)
     {
-        $post->load('tags', 'uploader', 'comments');
+        $post->load('tags', 'uploader', 'comments.user');
 
         $tagsQuery = $request->string('tags')->toString();
 

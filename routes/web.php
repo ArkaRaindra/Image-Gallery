@@ -26,3 +26,4 @@ Route::post('/register', [AuthController::class, 'register'])->middleware('guest
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
 Route::get('/account', [AccountController::class, 'show'])->name('account.show')->middleware('auth');
+Route::post('/account/avatar', [AccountController::class, 'updateAvatar'])->name('account.avatar')->middleware('auth');
