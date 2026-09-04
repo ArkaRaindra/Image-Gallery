@@ -11,6 +11,7 @@
 <body class="bg-gallery-green text-gray-900 min-h-screen">
     @php
         $isAuthSection = request()->routeIs('login') || request()->routeIs('register');
+        $isAccountSection = request()->routeIs('account.*');
     @endphp
     <header class="bg-gallery-green border-b border-green-800">
         <div class="w-full px-6 py-2 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm font-medium">
@@ -40,6 +41,17 @@
                     <a href="{{ route('register') }}" class="hover:text-gray-200 cursor-pointer">Sign up</a>
                     <a href="{{ route('login') }}" class="hover:text-gray-200 cursor-pointer">Login</a>
                     <span class="cursor-not-allowed">Forgot password</span>
+                @elseif ($isAccountSection)
+                    <a href="{{ route('posts.index') }}" class="hover:text-gray-200 cursor-pointer">Listing</a>
+                    <span class="cursor-not-allowed">Profile</span>
+                    <span class="cursor-not-allowed">Settings</span>
+                    <span class="cursor-not-allowed">Messages</span>
+                    <span class="cursor-not-allowed">My Uploads</span>
+                    <span class="cursor-not-allowed">Upgrade</span>
+                    <form method="POST" action="{{ route('logout') }}" class="inline m-0">
+                        @csrf
+                        <button type="submit" class="hover:text-gray-200 cursor-pointer">Log out</button>
+                    </form>
                 @else
                     <a href="{{ route('posts.index') }}" class="hover:text-gray-200 cursor-pointer {{ request()->routeIs('posts.index') || request()->routeIs('posts.show') ? 'font-bold text-gray-200' : '' }}">Listing</a>
                     <a href="/admin/posts/create" class="hover:text-gray-200 cursor-pointer">Upload</a>
