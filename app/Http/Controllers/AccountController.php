@@ -15,6 +15,7 @@ class AccountController extends Controller
         $stats = [
             'posts' => Post::where('uploader_id', $user->id)->count(),
             'comments' => Comment::where('user_id', $user->id)->count(),
+            'favorites' => $user->favorites()->count(),
         ];
 
         return view('account.show' , [

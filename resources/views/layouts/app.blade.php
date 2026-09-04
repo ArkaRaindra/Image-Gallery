@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,6 +9,7 @@
     <title>@yield('title', 'Image Gallery')</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
+
 <body class="bg-gallery-green text-gray-900 min-h-screen">
     @php
         $isAuthSection = request()->routeIs('login') || request()->routeIs('register');
@@ -20,12 +22,14 @@
             </a>
 
             @auth
-                <a href="{{ route('account.show') }}" class="text-green-900 {{ request()->routeIs('account.*') ? 'font-bold text-base' : '' }}">My Account</a>
+                <a href="{{ route('account.show') }}"
+                    class="text-green-900 {{ request()->routeIs('account.*') ? 'font-bold text-base' : '' }}">My Account</a>
             @else
                 <a href="{{ route('login') }}" class="text-red-400">Login</a>
             @endauth
 
-            <a href="{{ route('posts.index') }}" class="text-green-900 {{ request()->routeIs('posts.index') || request()->routeIs('posts.show') ? 'font-bold text-base' : '' }}">Posts</a>
+            <a href="{{ route('posts.index') }}"
+                class="text-green-900 {{ request()->routeIs('posts.index') || request()->routeIs('posts.show') ? 'font-bold text-base' : '' }}">Posts</a>
             <span class="text-gray-600 cursor-not-allowed">Comments</span>
             <span class="text-gray-600 cursor-not-allowed">Notes</span>
             <span class="text-gray-600 cursor-not-allowed">Artists</span>
@@ -53,11 +57,12 @@
                         <button type="submit" class="hover:text-gray-200 cursor-pointer">Log out</button>
                     </form>
                 @else
-                    <a href="{{ route('posts.index') }}" class="hover:text-gray-200 cursor-pointer {{ request()->routeIs('posts.index') || request()->routeIs('posts.show') ? 'font-bold text-gray-200' : '' }}">Listing</a>
+                    <a href="{{ route('posts.index') }}"
+                        class="hover:text-gray-200 cursor-pointer {{ request()->routeIs('posts.index') || request()->routeIs('posts.show') ? 'font-bold text-gray-200' : '' }}">Listing</a>
                     <a href="/admin/posts/create" class="hover:text-gray-200 cursor-pointer">Upload</a>
                     <span class="cursor-not-allowed">Hot</span>
                     @auth
-                        <span class="cursor-not-allowed">Favorites</span>
+                        <a href="{{ route('favorites.index') }}" class="hover:text-gray-200 cursor-pointer">Favorites</a>
                         <span class="cursor-not-allowed">Fav groups</span>
                         <span class="cursor-not-allowed">Saved searches</span>
                     @endauth
@@ -72,4 +77,5 @@
         @yield('content')
     </div>
 </body>
+
 </html>

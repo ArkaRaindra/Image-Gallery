@@ -59,6 +59,8 @@ class PostController extends Controller
             'prevId' => $prevId,
             'nextId' => $nextId,
             'votedPosts' => session('voted_posts', []),
+            'isFavorited' => $post->isfavoritedBy($request->user()),
+            'favoriteCount' => $post->favoritedBy()->count(),
         ]);
     }
 

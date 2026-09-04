@@ -57,6 +57,20 @@ class Post extends Model
         return $this->hasMany(Comment::class)->latest();
     }
 
+    public function favoritedBy(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'favorites')->withTimestamps();
+    }
+
+    public function isFavoritedBy(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        return $this->favoritedBy()->where('users.id', $user->id)->exists();
+    }
+
     public function scopeApproved($query)
     {
         return $query->where('is_approved', true);

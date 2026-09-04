@@ -14,7 +14,7 @@
             <tr><td class="pr-6 py-0.5 text-gray-600">Level</td><td>Member</td></tr>
             <tr><td class="pr-6 py-0.5 text-gray-600">Posts</td><td>{{ $stats['posts'] }}</td></tr>
             <tr><td class="pr-6 py-0.5 text-gray-600">Deleted Posts</td><td>0</td></tr>
-            <tr><td class="pr-6 py-0.5 text-gray-600">Favorites</td><td>0</td></tr>
+                        <tr><td class="pr-6 py-0.5 text-gray-600">Favorites</td><td>{{ $stats['favorites'] }}</td></tr>
             <tr><td class="pr-6 py-0.5 text-gray-600">Favorite Groups</td><td>0</td></tr>
             <tr><td class="pr-6 py-0.5 text-gray-600">Post Changes</td><td>0</td></tr>
             <tr><td class="pr-6 py-0.5 text-gray-600">Wiki Page Changes</td><td>0</td></tr>
