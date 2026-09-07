@@ -42,7 +42,7 @@ class PostController extends Controller
         ]);
     }
 
-        public function show(Request $request, Post $post)
+    public function show(Request $request, Post $post)
     {
         $post->load('tags', 'uploader', 'comments.user');
 
@@ -50,8 +50,8 @@ class PostController extends Controller
 
         $scopedIds = $this->search->search($tagsQuery)->pluck('id');
 
-        $prevId = $scopedIds->filter(fn ($id) => $id > $post->id)->min();
-        $nextId = $scopedIds->filter(fn ($id) => $id < $post->id)->max();
+        $prevId = $scopedIds->filter(fn($id) => $id > $post->id)->min();
+        $nextId = $scopedIds->filter(fn($id) => $id < $post->id)->max();
 
         return view('posts.show', [
             'post' => $post,
@@ -59,7 +59,8 @@ class PostController extends Controller
             'prevId' => $prevId,
             'nextId' => $nextId,
             'votedPosts' => session('voted_posts', []),
-            'isFavorited' => $post->isfavoritedBy($request->user()),
+            'votedComments' => session('voted_comments', []),
+            'isFavorited' => $post->isFavoritedBy($request->user()),
             'favoriteCount' => $post->favoritedBy()->count(),
         ]);
     }
@@ -123,12 +124,12 @@ class PostController extends Controller
         $character = ($grouped->get('character', collect())->pluck('name')->join('_'));
         $copyright = ($grouped->get('copyright', collect())->pluck('name')->join('_'));
         $artist = ($grouped->get('artist', collect())->pluck('name')->join('_'));
-        $prefix = collect([$character, $copyright, $artist ? 'drawn_by_'.$artist : null])->filter()->implode('_');
+        $prefix = collect([$character, $copyright, $artist ? 'drawn_by_' . $artist : null])->filter()->implode('_');
 
         $baseName = pathinfo($post->file_name, PATHINFO_FILENAME);
         $extension = pathinfo($post->file_name, PATHINFO_EXTENSION);
 
-        $fileName = '__'.$prefix.'__'.$baseName.'.'.$extension;
+        $fileName = '__' . $prefix . '__' . $baseName . '.' . $extension;
 
         return \Illuminate\Support\Facades\Storage::disk('public')->download($post->file_path, $fileName);
     }

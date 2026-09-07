@@ -16,6 +16,7 @@ Route::post('/posts/{post}/vote', [PostController::class, 'vote'])->name('posts.
 Route::get('/posts/{post}/download', [PostController::class, 'download'])->name('posts.download');
 Route::post('/posts/{post}/comments', [CommentController::class, 'store'])->name('comments.store')->middleware('auth');
 Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy')->middleware('auth');
+Route::post('/comments/{comment}/vote', [CommentController::class, 'vote'])->name('comments.vote')->middleware('auth');
 Route::post('/posts/{post}/favorite', [FavoriteController::class, 'toggle'])->name('favorites.toggle')->middleware('auth');
 Route::get('/favorites', [FavoriteController::class, 'index'])->name('favorites.index')->middleware('auth');
 Route::post('/comments/upload-image', [CommentController::class, 'uploadImage'])->name('comments.upload-image')->middleware('auth');

@@ -15,18 +15,53 @@ class CommentController extends Controller
     {
         $data = $request->validate([
             'body' => ['required', 'string', 'max:5000'],
+            'parent_id' => ['nullable', 'integer', 'exists:comments,id'],
         ]);
 
         $post->comments()->create([
             'user_id' => $request->user()->id,
             'author_name' => $request->user()->name,
             'body' => $data['body'],
+            'parent_id' => $data['parent_id'] ?? null,
         ]);
 
         $tagsQuery = $request->string('tags')->toString();
         $url = route('posts.show', ['post' => $post, 'tags' => $tagsQuery]) . '#comments';
 
         return redirect($url);
+    }
+
+    public function vote(Request $request, Comment $comment): JsonResponse
+    {
+        $direction = $request->string('direction')->toString();
+
+        if (! in_array($direction, ['up', 'down'], true)) {
+            return response()->json(['message' => 'Invalid direction'], 422);
+        }
+
+        $voted = session('voted_comments', []);
+        $existing = $voted[$comment->id] ?? null;
+
+        if ($existing === $direction) {
+            $comment->increment('score', $direction === 'up' ? -1 : 1);
+            unset($voted[$comment->id]);
+            $newVote = null;
+        } elseif ($existing) {
+            $comment->increment('score', $direction === 'up' ? 2 : -2);
+            $voted[$comment->id] = $direction;
+            $newVote = $direction;
+        } else {
+            $comment->increment('score', $direction === 'up' ? 1 : -1);
+            $voted[$comment->id] = $direction;
+            $newVote = $direction;
+        }
+
+        session(['voted_comments' => $voted]);
+
+        return response()->json([
+            'score' => $comment->fresh()->score,
+            'voted' => $newVote,
+        ]);
     }
 
     public function destroy(Request $request, Comment $comment): RedirectResponse

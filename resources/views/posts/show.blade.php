@@ -176,40 +176,160 @@
                     Comments ({{ $post->comments->count() }})
                 </h3>
 
-                <div class="space-y-3 mb-4">
-                    @forelse ($post->comments as $comment)
-                        <div class="rounded p-3 flex gap-3">
-                            <div
-                                class="w-10 h-10 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center shrink-0">
-                                @if ($comment->user?->avatarUrl())
-                                    <img src="{{ $comment->user->avatarUrl() }}" alt="{{ $comment->author_name }}"
-                                        class="w-full h-full object-cover">
-                                @else
-                                    <span class="text-sm font-bold text-gray-600">
-                                        {{ strtoupper(substr($comment->author_name, 0, 1)) }}
-                                    </span>
-                                @endif
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
-                                    <span class="font-medium text-gray-900">{{ $comment->author_name }}</span>
-                                    <span>{{ $comment->created_at->diffForHumans() }}</span>
+                <div class="space-y-4 mb-4">
+                    @php $topLevelComments = $post->comments->whereNull('parent_id'); @endphp
+                    @forelse ($topLevelComments as $comment)
+                        @php
+                            $votedDirection = $votedComments[$comment->id] ?? null;
+                            $replies = $post->comments->where('parent_id', $comment->id);
+                        @endphp
+                        <div class="rounded p-3">
+                            <div class="flex gap-3">
+                                <div
+                                    class="w-10 h-10 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center shrink-0">
+                                    @if ($comment->user?->avatarUrl())
+                                        <img src="{{ $comment->user->avatarUrl() }}" alt="{{ $comment->author_name }}"
+                                            class="w-full h-full object-cover">
+                                    @else
+                                        <span class="text-sm font-bold text-gray-600">
+                                            {{ strtoupper(substr($comment->author_name, 0, 1)) }}
+                                        </span>
+                                    @endif
                                 </div>
-                                <div class="text-sm text-gray-800 mb-1">
-                                    {!! \App\Support\SimpleMarkdown::toHtml($comment->body) !!}
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
+                                        <span class="font-medium text-gray-900">{{ $comment->author_name }}</span>
+                                        <span>{{ $comment->created_at->diffForHumans() }}</span>
+                                    </div>
+                                    <div class="text-sm text-gray-800 mb-1">
+                                        {!! \App\Support\SimpleMarkdown::toHtml($comment->body) !!}
+                                    </div>
+                                    <div class="flex items-center gap-3 text-xs">
+                                        <span class="flex items-center gap-1" data-comment-vote-widget
+                                            data-comment-id="{{ $comment->id }}" data-voted="{{ $votedDirection }}">
+                                            <button type="button" data-comment-vote="up"
+                                                class="{{ $votedDirection === 'up' ? 'text-green-400' : 'hover:text-green-400' }} cursor-pointer">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                                    fill="none" stroke="currentColor" stroke-width="2.5"
+                                                    stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
+                                                    <path d="M12 20V4M5 11l7-7 7 7" />
+                                                </svg>
+                                            </button>
+                                            <span data-comment-score>{{ $comment->score }}</span>
+                                            <button type="button" data-comment-vote="down"
+                                                class="{{ $votedDirection === 'down' ? 'text-red-400' : 'hover:text-red-400' }} cursor-pointer">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                                    fill="none" stroke="currentColor" stroke-width="2.5"
+                                                    stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
+                                                    <path d="M12 4v16M5 13l7 7 7-7" />
+                                                </svg>
+                                            </button>
+                                        </span>
+                                        @auth
+                                            <button type="button"
+                                                class="reply-toggle-btn text-sky-700 hover:underline cursor-pointer"
+                                                data-username="{{ $comment->author_name }}"
+                                                data-comment-id="{{ $comment->id }}">Reply</button>
+                                        @endauth
+                                        @if (auth()->user()?->isAdmin())
+                                            <form method="POST" action="{{ route('comments.destroy', $comment) }}"
+                                                onsubmit="return confirm('Delete this comment?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <input type="hidden" name="tags" value="{{ $tagQuery }}">
+                                                <button type="submit"
+                                                    class="text-red-600 hover:underline cursor-pointer">Delete</button>
+                                            </form>
+                                        @endif
+                                    </div>
+
+                                    @auth
+                                        <form method="POST" action="{{ route('comments.store', $post) }}"
+                                            class="reply-form hidden mt-2" data-comment-id="{{ $comment->id }}">
+                                            @csrf
+                                            <input type="hidden" name="tags" value="{{ $tagQuery }}">
+                                            <input type="hidden" name="parent_id" value="{{ $comment->id }}">
+                                            <textarea name="body" rows="2" required placeholder="Write a reply..."
+                                                class="w-full px-2 py-1.5 text-sm rounded bg-white border border-gray-700 focus:outline-none"></textarea>
+                                            <button type="submit"
+                                                class="mt-1 px-2 py-1 rounded bg-green-700 hover:bg-green-800 text-white text-xs cursor-pointer">
+                                                Reply
+                                            </button>
+                                        </form>
+                                    @endauth
+
+                                    @if ($replies->isNotEmpty())
+                                        <div class="mt-3 ml-4 pl-3 border-l-2 border-gray-300 space-y-3">
+                                            @foreach ($replies as $reply)
+                                                @php $replyVoted = $votedComments[$reply->id] ?? null; @endphp
+                                                <div class="flex gap-2">
+                                                    <div
+                                                        class="w-7 h-7 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center shrink-0">
+                                                        @if ($reply->user?->avatarUrl())
+                                                            <img src="{{ $reply->user->avatarUrl() }}"
+                                                                alt="{{ $reply->author_name }}"
+                                                                class="w-full h-full object-cover">
+                                                        @else
+                                                            <span class="text-xs font-bold text-gray-600">
+                                                                {{ strtoupper(substr($reply->author_name, 0, 1)) }}
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                    <div class="flex-1 min-w-0">
+                                                        <div
+                                                            class="flex items-center justify-between text-[11px] text-gray-500 mb-0.5">
+                                                            <span
+                                                                class="font-medium text-gray-900">{{ $reply->author_name }}</span>
+                                                            <span>{{ $reply->created_at->diffForHumans() }}</span>
+                                                        </div>
+                                                        <div class="text-xs text-gray-800">
+                                                            {!! \App\Support\SimpleMarkdown::toHtml($reply->body) !!}
+                                                        </div>
+                                                        <div class="flex items-center gap-2 text-[11px] mt-0.5">
+                                                            <span class="flex items-center gap-1" data-comment-vote-widget
+                                                                data-comment-id="{{ $reply->id }}"
+                                                                data-voted="{{ $replyVoted }}">
+                                                                <button type="button" data-comment-vote="up"
+                                                                    class="{{ $replyVoted === 'up' ? 'text-green-400' : 'hover:text-green-400' }} cursor-pointer">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                                                        viewBox="0 0 24 24" fill="none"
+                                                                        stroke="currentColor" stroke-width="2.5"
+                                                                        stroke-linecap="round" stroke-linejoin="round"
+                                                                        class="w-2.5 h-2.5">
+                                                                        <path d="M12 20V4M5 11l7-7 7 7" />
+                                                                    </svg>
+                                                                </button>
+                                                                <span data-comment-score>{{ $reply->score }}</span>
+                                                                <button type="button" data-comment-vote="down"
+                                                                    class="{{ $replyVoted === 'down' ? 'text-red-400' : 'hover:text-red-400' }} cursor-pointer">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                                                        viewBox="0 0 24 24" fill="none"
+                                                                        stroke="currentColor" stroke-width="2.5"
+                                                                        stroke-linecap="round" stroke-linejoin="round"
+                                                                        class="w-2.5 h-2.5">
+                                                                        <path d="M12 4v16M5 13l7 7 7-7" />
+                                                                    </svg>
+                                                                </button>
+                                                            </span>
+                                                            @if (auth()->user()?->isAdmin())
+                                                                <form method="POST"
+                                                                    action="{{ route('comments.destroy', $reply) }}"
+                                                                    onsubmit="return confirm('Delete this comment?')">
+                                                                    @csrf
+                                                                    @method('DELETE')
+                                                                    <input type="hidden" name="tags"
+                                                                        value="{{ $tagQuery }}">
+                                                                    <button type="submit"
+                                                                        class="text-red-600 hover:underline cursor-pointer">Delete</button>
+                                                                </form>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                 </div>
-                                @if (auth()->user()?->isAdmin())
-                                    <form method="POST" action="{{ route('comments.destroy', $comment) }}"
-                                        onsubmit="return confirm('Delete this comment?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <input type="hidden" name="tags" value="{{ $tagQuery }}">
-                                        <button type="submit"
-                                            class="text-xs text-red-600 hover:underline cursor-pointer">
-                                            Delete
-                                        </button>
-                                    </form>
-                                @endif
                             </div>
                         </div>
                     @empty
@@ -368,6 +488,7 @@
                     '<img src="$2" alt="$1" class="max-w-full rounded my-1">');
                 html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
                     '<a href="$2" target="_blank" rel="noopener" class="text-sky-700 underline">$1</a>');
+                html = html.replace(/@([a-zA-Z0-9_.]+)/g, '<span class="text-sky-700 font-semibold">@$1</span>');
                 html = html.replace(/\*\*(.+?)\*\*/gs, '<strong>$1</strong>');
                 html = html.replace(/\*(.+?)\*/gs, '<em>$1</em>');
                 return html.replace(/\n/g, '<br>');

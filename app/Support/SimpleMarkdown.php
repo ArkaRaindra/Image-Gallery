@@ -21,6 +21,13 @@ class SimpleMarkdown
             '<a href="$2" target="_blank" rel="noopener" class="text-sky-700 underline">$1</a>',
             $html
         );
+        
+        // Mentions: @username
+        $html = preg_replace(
+            '/@([a-zA-Z0-9_.]+)/',
+            '<span class="text-sky-700 font-semibold">@$1</span>',
+            $html
+        );
 
         // Bold: **text**
         $html = preg_replace('/\*\*(.+?)\*\*/s', '<strong>$1</strong>', $html);

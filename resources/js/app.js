@@ -192,3 +192,70 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+function applyCommentVotedState(widget, direction) {
+    widget.dataset.voted = direction ?? '';
+    widget.querySelectorAll('[data-comment-vote]').forEach((btn) => {
+        const isActive = direction === btn.dataset.commentVote;
+        const activeColor = btn.dataset.commentVote === 'up' ? 'text-green-400' : 'text-red-400';
+        const hoverColor = btn.dataset.commentVote === 'up' ? 'hover:text-green-400' : 'hover:text-red-400';
+        btn.classList.remove('text-green-400', 'text-red-400', 'hover:text-green-400', 'hover:text-red-400');
+        btn.classList.add(isActive ? activeColor : hoverColor);
+    });
+}
+
+document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-comment-vote]');
+    if (!btn) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const widget = btn.closest('[data-comment-vote-widget]');
+    const commentId = widget.dataset.commentId;
+    const direction = btn.dataset.commentVote;
+
+    try {
+        const res = await fetch(`/comments/${commentId}/vote`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({ direction }),
+        });
+        const data = await res.json();
+        widget.querySelectorAll('[data-comment-score]').forEach((el) => (el.textContent = data.score));
+        applyCommentVotedState(widget, data.voted);
+    } catch (err) {
+        console.error('Comment vote failed', err);
+    }
+});
+
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.reply-toggle-btn');
+    if (!btn) return;
+
+    const commentId = btn.dataset.commentId;
+    const form = document.querySelector(`.reply-form[data-comment-id="${commentId}"]`);
+    if (!form) return;
+
+    form.classList.toggle('hidden');
+
+    if (!form.classList.contains('hidden')) {
+        const textarea = form.querySelector('textarea');
+        if (!textarea.value) {
+            textarea.value = `@${btn.dataset.username} `;
+        }
+        textarea.focus();
+    }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-comment-vote-widget]').forEach((widget) => {
+        if (widget.dataset.voted) {
+            applyCommentVotedState(widget, widget.dataset.voted);
+        }
+    });
+});
