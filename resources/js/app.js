@@ -259,3 +259,143 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+document.addEventListener('click', (e) => {
+    const viewBtn = e.target.closest('.view-replies-btn');
+    if (viewBtn) {
+        const wrapper = document.querySelector(`.replies-wrapper[data-comment-id="${viewBtn.dataset.commentId}"]`);
+        if (!wrapper) return;
+
+        const isHidden = wrapper.classList.toggle('hidden');
+        viewBtn.textContent = isHidden
+            ? `View ${viewBtn.dataset.count} ${viewBtn.dataset.count == 1 ? 'reply' : 'replies'}`
+            : 'Hide replies';
+        return;
+    }
+
+    const moreBtn = e.target.closest('.view-more-replies-btn');
+    if (moreBtn) {
+        const wrapper = moreBtn.closest('.replies-wrapper');
+        wrapper.querySelectorAll('.extra-reply').forEach((el) => el.classList.remove('hidden'));
+        moreBtn.remove();
+    }
+});
+
+function setupMentionAutocomplete(textarea) {
+    const list = document.createElement('ul');
+    list.className = 'fixed z-50 hidden bg-gray-900 border border-gray-700 rounded shadow-lg max-h-56 overflow-y-auto text-sm';
+    document.body.appendChild(list);
+
+    let currentItems = [];
+    let activeIndex = -1;
+    let mentionStart = -1;
+
+    function positionList() {
+        const rect = textarea.getBoundingClientRect();
+        list.style.left = rect.left + 'px';
+        list.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+        list.style.width = Math.min(rect.width, 240) + 'px';
+    }
+
+    function closeList() {
+        list.classList.add('hidden');
+        mentionStart = -1;
+    }
+
+    function currentMentionWord() {
+        const cursor = textarea.selectionStart;
+        const text = textarea.value.slice(0, cursor);
+        const match = text.match(/@([a-zA-Z0-9_.]*)$/);
+        if (!match) return null;
+        mentionStart = cursor - match[0].length;
+        return match[1];
+    }
+
+    function render(users) {
+        currentItems = users;
+        activeIndex = -1;
+        list.innerHTML = '';
+
+        if (!users.length) {
+            closeList();
+            return;
+        }
+
+        users.forEach((user) => {
+            const li = document.createElement('li');
+            li.className = 'px-3 py-1.5 cursor-pointer hover:bg-gray-800 text-sky-400';
+            li.textContent = '@' + user.name;
+            li.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                insertMention(user.name);
+            });
+            list.appendChild(li);
+        });
+
+        positionList();
+        list.classList.remove('hidden');
+    }
+
+    function highlight() {
+        [...list.children].forEach((li, i) => li.classList.toggle('bg-gray-800', i === activeIndex));
+    }
+
+    function insertMention(username) {
+        const cursor = textarea.selectionStart;
+        const before = textarea.value.slice(0, mentionStart);
+        const after = textarea.value.slice(cursor);
+        textarea.value = before + '@' + username + ' ' + after;
+        const newPos = (before + '@' + username + ' ').length;
+        textarea.setSelectionRange(newPos, newPos);
+        textarea.focus();
+        closeList();
+    }
+
+    const fetchUsers = debounce(async (query) => {
+        try {
+            const res = await fetch('/users/autocomplete?q=' + encodeURIComponent(query));
+            const data = await res.json();
+            render(data);
+        } catch (e) {
+            closeList();
+        }
+    }, 200);
+
+    textarea.addEventListener('input', () => {
+        const word = currentMentionWord();
+        if (word === null || word.length === 0) {
+            closeList();
+            return;
+        }
+        fetchUsers(word);
+    });
+
+    textarea.addEventListener('keydown', (e) => {
+        if (list.classList.contains('hidden')) return;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            activeIndex = Math.min(activeIndex + 1, currentItems.length - 1);
+            highlight();
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            activeIndex = Math.max(activeIndex - 1, 0);
+            highlight();
+        } else if (e.key === 'Enter' && activeIndex >= 0) {
+            e.preventDefault();
+            insertMention(currentItems[activeIndex].name);
+        } else if (e.key === 'Escape') {
+            closeList();
+        }
+    });
+
+    textarea.addEventListener('blur', () => setTimeout(closeList, 150));
+
+    window.addEventListener('scroll', () => {
+        if (!list.classList.contains('hidden')) positionList();
+    }, true);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('textarea[name="body"]').forEach(setupMentionAutocomplete);
+});

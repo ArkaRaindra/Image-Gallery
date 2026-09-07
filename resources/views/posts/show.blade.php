@@ -242,96 +242,112 @@
                                             </form>
                                         @endif
                                     </div>
-
-                                    @auth
-                                        <form method="POST" action="{{ route('comments.store', $post) }}"
-                                            class="reply-form hidden mt-2" data-comment-id="{{ $comment->id }}">
-                                            @csrf
-                                            <input type="hidden" name="tags" value="{{ $tagQuery }}">
-                                            <input type="hidden" name="parent_id" value="{{ $comment->id }}">
-                                            <textarea name="body" rows="2" required placeholder="Write a reply..."
-                                                class="w-full px-2 py-1.5 text-sm rounded bg-white border border-gray-700 focus:outline-none"></textarea>
-                                            <button type="submit"
-                                                class="mt-1 px-2 py-1 rounded bg-green-700 hover:bg-green-800 text-white text-xs cursor-pointer">
-                                                Reply
-                                            </button>
-                                        </form>
-                                    @endauth
-
-                                    @if ($replies->isNotEmpty())
-                                        <div class="mt-3 ml-4 pl-3 border-l-2 border-gray-300 space-y-3">
-                                            @foreach ($replies as $reply)
-                                                @php $replyVoted = $votedComments[$reply->id] ?? null; @endphp
-                                                <div class="flex gap-2">
-                                                    <div
-                                                        class="w-7 h-7 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center shrink-0">
-                                                        @if ($reply->user?->avatarUrl())
-                                                            <img src="{{ $reply->user->avatarUrl() }}"
-                                                                alt="{{ $reply->author_name }}"
-                                                                class="w-full h-full object-cover">
-                                                        @else
-                                                            <span class="text-xs font-bold text-gray-600">
-                                                                {{ strtoupper(substr($reply->author_name, 0, 1)) }}
-                                                            </span>
-                                                        @endif
-                                                    </div>
-                                                    <div class="flex-1 min-w-0">
-                                                        <div
-                                                            class="flex items-center justify-between text-[11px] text-gray-500 mb-0.5">
-                                                            <span
-                                                                class="font-medium text-gray-900">{{ $reply->author_name }}</span>
-                                                            <span>{{ $reply->created_at->diffForHumans() }}</span>
-                                                        </div>
-                                                        <div class="text-xs text-gray-800">
-                                                            {!! \App\Support\SimpleMarkdown::toHtml($reply->body) !!}
-                                                        </div>
-                                                        <div class="flex items-center gap-2 text-[11px] mt-0.5">
-                                                            <span class="flex items-center gap-1" data-comment-vote-widget
-                                                                data-comment-id="{{ $reply->id }}"
-                                                                data-voted="{{ $replyVoted }}">
-                                                                <button type="button" data-comment-vote="up"
-                                                                    class="{{ $replyVoted === 'up' ? 'text-green-400' : 'hover:text-green-400' }} cursor-pointer">
-                                                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                                                        viewBox="0 0 24 24" fill="none"
-                                                                        stroke="currentColor" stroke-width="2.5"
-                                                                        stroke-linecap="round" stroke-linejoin="round"
-                                                                        class="w-2.5 h-2.5">
-                                                                        <path d="M12 20V4M5 11l7-7 7 7" />
-                                                                    </svg>
-                                                                </button>
-                                                                <span data-comment-score>{{ $reply->score }}</span>
-                                                                <button type="button" data-comment-vote="down"
-                                                                    class="{{ $replyVoted === 'down' ? 'text-red-400' : 'hover:text-red-400' }} cursor-pointer">
-                                                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                                                        viewBox="0 0 24 24" fill="none"
-                                                                        stroke="currentColor" stroke-width="2.5"
-                                                                        stroke-linecap="round" stroke-linejoin="round"
-                                                                        class="w-2.5 h-2.5">
-                                                                        <path d="M12 4v16M5 13l7 7 7-7" />
-                                                                    </svg>
-                                                                </button>
-                                                            </span>
-                                                            @if (auth()->user()?->isAdmin())
-                                                                <form method="POST"
-                                                                    action="{{ route('comments.destroy', $reply) }}"
-                                                                    onsubmit="return confirm('Delete this comment?')">
-                                                                    @csrf
-                                                                    @method('DELETE')
-                                                                    <input type="hidden" name="tags"
-                                                                        value="{{ $tagQuery }}">
-                                                                    <button type="submit"
-                                                                        class="text-red-600 hover:underline cursor-pointer">Delete</button>
-                                                                </form>
-                                                            @endif
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    @endif
                                 </div>
                             </div>
                         </div>
+
+                        @auth
+                            <form method="POST" action="{{ route('comments.store', $post) }}"
+                                class="reply-form hidden mt-2 ml-12" data-comment-id="{{ $comment->id }}">
+                                @csrf
+                                <input type="hidden" name="tags" value="{{ $tagQuery }}">
+                                <input type="hidden" name="parent_id" value="{{ $comment->id }}">
+                                <textarea name="body" rows="2" required placeholder="Write a reply..."
+                                    class="w-full px-2 py-1.5 text-sm rounded bg-white border border-gray-700 focus:outline-none"></textarea>
+                                <button type="submit"
+                                    class="mt-1 px-2 py-1 rounded bg-green-700 hover:bg-green-800 text-white text-xs cursor-pointer">
+                                    Reply
+                                </button>
+                            </form>
+                        @endauth
+
+                        @if ($replies->isNotEmpty())
+                            <button type="button"
+                                class="view-replies-btn mt-2 ml-12 text-xs text-sky-700 hover:underline cursor-pointer"
+                                data-comment-id="{{ $comment->id }}" data-count="{{ $replies->count() }}">
+                                View {{ $replies->count() }} {{ Str::plural('reply', $replies->count()) }}
+                            </button>
+
+                            <div class="replies-wrapper hidden mt-3 ml-12 pl-3 border-l-2 border-gray-300 space-y-3"
+                                data-comment-id="{{ $comment->id }}">
+                                @foreach ($replies as $reply)
+                                    @php $replyVoted = $votedComments[$reply->id] ?? null; @endphp
+                                    <div
+                                        class="flex gap-2 {{ $loop->index >= 3 ? 'extra-reply hidden' : '' }}">
+                                        <div
+                                            class="w-7 h-7 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center shrink-0">
+                                            @if ($reply->user?->avatarUrl())
+                                                <img src="{{ $reply->user->avatarUrl() }}"
+                                                    alt="{{ $reply->author_name }}"
+                                                    class="w-full h-full object-cover">
+                                            @else
+                                                <span class="text-xs font-bold text-gray-600">
+                                                    {{ strtoupper(substr($reply->author_name, 0, 1)) }}
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div
+                                                class="flex items-center justify-between text-[11px] text-gray-500 mb-0.5">
+                                                <span
+                                                    class="font-medium text-gray-900">{{ $reply->author_name }}</span>
+                                                <span>{{ $reply->created_at->diffForHumans() }}</span>
+                                            </div>
+                                            <div class="text-xs text-gray-800">
+                                                {!! \App\Support\SimpleMarkdown::toHtml($reply->body) !!}
+                                            </div>
+                                            <div class="flex items-center gap-2 text-[11px] mt-0.5">
+                                                <span class="flex items-center gap-1" data-comment-vote-widget
+                                                    data-comment-id="{{ $reply->id }}"
+                                                    data-voted="{{ $replyVoted }}">
+                                                    <button type="button" data-comment-vote="up"
+                                                        class="{{ $replyVoted === 'up' ? 'text-green-400' : 'hover:text-green-400' }} cursor-pointer">
+                                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                                            viewBox="0 0 24 24" fill="none"
+                                                            stroke="currentColor" stroke-width="2.5"
+                                                            stroke-linecap="round" stroke-linejoin="round"
+                                                            class="w-2.5 h-2.5">
+                                                            <path d="M12 20V4M5 11l7-7 7 7" />
+                                                        </svg>
+                                                    </button>
+                                                    <span data-comment-score>{{ $reply->score }}</span>
+                                                    <button type="button" data-comment-vote="down"
+                                                        class="{{ $replyVoted === 'down' ? 'text-red-400' : 'hover:text-red-400' }} cursor-pointer">
+                                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                                            viewBox="0 0 24 24" fill="none"
+                                                            stroke="currentColor" stroke-width="2.5"
+                                                            stroke-linecap="round" stroke-linejoin="round"
+                                                            class="w-2.5 h-2.5">
+                                                            <path d="M12 4v16M5 13l7 7 7-7" />
+                                                        </svg>
+                                                    </button>
+                                                </span>
+                                                @if (auth()->user()?->isAdmin())
+                                                    <form method="POST"
+                                                        action="{{ route('comments.destroy', $reply) }}"
+                                                        onsubmit="return confirm('Delete this comment?')" class="inline">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <input type="hidden" name="tags"
+                                                            value="{{ $tagQuery }}">
+                                                        <button type="submit"
+                                                            class="text-red-600 hover:underline cursor-pointer">Delete</button>
+                                                    </form>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+
+                                @if ($replies->count() > 3)
+                                    <button type="button"
+                                        class="view-more-replies-btn text-xs text-sky-700 hover:underline cursor-pointer">
+                                        View {{ $replies->count() - 3 }} more
+                                        {{ Str::plural('reply', $replies->count() - 3) }}
+                                    </button>
+                                @endif
+                            </div>
+                        @endif
                     @empty
                         <p class="text-sm text-gray-500">There are no comments.</p>
                     @endforelse
