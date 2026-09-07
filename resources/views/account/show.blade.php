@@ -35,7 +35,7 @@
             <tr><td class="pr-6 py-0.5 text-gray-600">User ID</td><td>{{ $user->id }}</td></tr>
             <tr><td class="pr-6 py-0.5 text-gray-600">Join Date</td><td>{{ $user->created_at->format('Y-m-d') }}</td></tr>
             <tr><td class="pr-6 py-0.5 text-gray-600">Email Address</td><td>{{ $user->email }}</td></tr>
-            <tr><td class="pr-6 py-0.5 text-gray-600">Level</td><td>Member</td></tr>
+                        <tr><td class="pr-6 py-0.5 text-gray-600">Level</td><td>{{ ucfirst($user->role) }}</td></tr>
             <tr><td class="pr-6 py-0.5 text-gray-600">Posts</td><td>{{ $stats['posts'] }}</td></tr>
             <tr><td class="pr-6 py-0.5 text-gray-600">Deleted Posts</td><td>0</td></tr>
             <tr><td class="pr-6 py-0.5 text-gray-600">Favorites</td><td>{{ $stats['favorites'] }}</td></tr>

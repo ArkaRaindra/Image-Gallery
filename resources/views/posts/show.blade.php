@@ -248,14 +248,15 @@
 
                         @auth
                             <form method="POST" action="{{ route('comments.store', $post) }}"
-                                class="reply-form hidden mt-2 ml-12" data-comment-id="{{ $comment->id }}">
+                                class="reply-form hidden mt-2 ml-12 space-y-2" data-comment-id="{{ $comment->id }}">
                                 @csrf
                                 <input type="hidden" name="tags" value="{{ $tagQuery }}">
                                 <input type="hidden" name="parent_id" value="{{ $comment->id }}">
-                                <textarea name="body" rows="2" required placeholder="Write a reply..."
-                                    class="w-full px-2 py-1.5 text-sm rounded bg-white border border-gray-700 focus:outline-none"></textarea>
+
+                                @include('posts._comment-editor', ['rows' => 2, 'placeholder' => 'Write a reply...'])
+
                                 <button type="submit"
-                                    class="mt-1 px-2 py-1 rounded bg-green-700 hover:bg-green-800 text-white text-xs cursor-pointer">
+                                    class="px-2 py-1 rounded bg-green-700 hover:bg-green-800 text-white text-xs cursor-pointer">
                                     Reply
                                 </button>
                             </form>
@@ -272,8 +273,7 @@
                                 data-comment-id="{{ $comment->id }}">
                                 @foreach ($replies as $reply)
                                     @php $replyVoted = $votedComments[$reply->id] ?? null; @endphp
-                                    <div
-                                        class="flex gap-2 {{ $loop->index >= 3 ? 'extra-reply hidden' : '' }}">
+                                    <div class="flex gap-2 {{ $loop->index >= 3 ? 'extra-reply hidden' : '' }}">
                                         <div
                                             class="w-7 h-7 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center shrink-0">
                                             @if ($reply->user?->avatarUrl())
@@ -358,34 +358,7 @@
                         @csrf
                         <input type="hidden" name="tags" value="{{ $tagQuery }}">
 
-                        <div class="border border-gray-700 rounded overflow-hidden">
-                            <div class="flex items-center gap-1 bg-gray-100 border-b border-gray-300 px-2 py-1 text-xs">
-                                <button type="button" id="cm-preview-btn"
-                                    class="px-2 py-1 rounded hover:bg-gray-200 cursor-pointer">👁 Preview</button>
-                                <span class="w-px h-4 bg-gray-300 mx-1"></span>
-                                <button type="button" id="cm-bold-btn"
-                                    class="px-2 py-1 rounded hover:bg-gray-200 font-bold cursor-pointer">B</button>
-                                <button type="button" id="cm-italic-btn"
-                                    class="px-2 py-1 rounded hover:bg-gray-200 italic cursor-pointer">I</button>
-                                <button type="button" id="cm-link-btn"
-                                    class="px-2 py-1 rounded hover:bg-gray-200 cursor-pointer">🔗</button>
-                                <button type="button" id="cm-image-btn"
-                                    class="px-2 py-1 rounded hover:bg-gray-200 cursor-pointer">🖼</button>
-                                <div class="relative">
-                                    <button type="button" id="cm-emoji-btn"
-                                        class="px-2 py-1 rounded hover:bg-gray-200 cursor-pointer">😊</button>
-                                    <div id="cm-emoji-picker"
-                                        class="hidden absolute z-40 top-full left-0 mt-1 w-56 bg-white border border-gray-300 rounded shadow-lg p-2 grid grid-cols-8 gap-1 text-lg">
-                                    </div>
-                                </div>
-                                <input type="file" id="cm-image-input" accept="image/*" class="hidden">
-                            </div>
-
-                            <textarea id="cm-textarea" name="body" rows="4" required placeholder="Post a comment"
-                                class="w-full px-2 py-2 bg-white text-sm focus:outline-none">{{ old('body') }}</textarea>
-
-                            <div id="cm-preview" class="hidden px-2 py-2 text-sm border-t border-gray-300 bg-gray-50"></div>
-                        </div>
+                        @include('posts._comment-editor', ['rows' => 4])
 
                         @error('body')
                             <p class="text-xs text-red-600">{{ $message }}</p>
@@ -472,26 +445,6 @@
         })();
 
         (function() {
-            const textarea = document.getElementById('cm-textarea');
-            if (!textarea) return;
-
-            const previewBtn = document.getElementById('cm-preview-btn');
-            const previewBox = document.getElementById('cm-preview');
-            const boldBtn = document.getElementById('cm-bold-btn');
-            const italicBtn = document.getElementById('cm-italic-btn');
-            const linkBtn = document.getElementById('cm-link-btn');
-            const imageBtn = document.getElementById('cm-image-btn');
-            const imageInput = document.getElementById('cm-image-input');
-            const emojiBtn = document.getElementById('cm-emoji-btn');
-            const emojiPicker = document.getElementById('cm-emoji-picker');
-
-            const EMOJIS = ['😀', '😂', '😅', '😊', '😍', '😎', '🤔', '😢', '😭', '😡', '👍', '👎', '👏', '🙏', '🔥',
-                '✨', '🎉', '❤️', '💀', '😴', '😱', '🥺', '😏', '👀'
-            ];
-
-            emojiPicker.innerHTML = EMOJIS.map((e) =>
-                `<button type="button" class="hover:bg-gray-100 rounded" data-emoji="${e}">${e}</button>`).join('');
-
             function escapeHtml(str) {
                 const div = document.createElement('div');
                 div.textContent = str;
@@ -510,91 +463,113 @@
                 return html.replace(/\n/g, '<br>');
             }
 
-            function wrapSelection(before, after = before) {
-                const start = textarea.selectionStart;
-                const end = textarea.selectionEnd;
-                const selected = textarea.value.slice(start, end);
-                textarea.setRangeText(before + selected + after, start, end, 'end');
-                textarea.focus();
-            }
+            function setupRichEditor(container) {
+                const textarea = container.querySelector('.re-textarea');
+                if (!textarea) return;
 
-            function insertAtCursor(text) {
-                const start = textarea.selectionStart;
-                textarea.setRangeText(text, start, textarea.selectionEnd, 'end');
-                textarea.focus();
-            }
+                const previewBtn = container.querySelector('.re-preview');
+                const previewBox = container.querySelector('.re-preview-box');
+                const boldBtn = container.querySelector('.re-bold');
+                const italicBtn = container.querySelector('.re-italic');
+                const linkBtn = container.querySelector('.re-link');
+                const imageBtn = container.querySelector('.re-image');
+                const imageInput = container.querySelector('.re-image-input');
+                const emojiBtn = container.querySelector('.re-emoji');
+                const emojiPicker = container.querySelector('.re-emoji-picker');
 
-            boldBtn?.addEventListener('click', () => wrapSelection('**'));
-            italicBtn?.addEventListener('click', () => wrapSelection('*'));
+                const EMOJIS = ['😀', '😂', '😅', '😊', '😍', '😎', '🤔', '😢', '😭', '😡', '👍', '👎', '👏', '🙏',
+                    '🔥', '✨', '🎉', '❤️', '💀', '😴', '😱', '🥺', '😏', '👀'
+                ];
+                emojiPicker.innerHTML = EMOJIS.map((e) =>
+                    `<button type="button" class="hover:bg-gray-100 rounded" data-emoji="${e}">${e}</button>`
+                ).join('');
 
-            linkBtn?.addEventListener('click', () => {
-                const url = prompt('Enter URL:');
-                if (!url) return;
-                const start = textarea.selectionStart;
-                const end = textarea.selectionEnd;
-                const selected = textarea.value.slice(start, end) || 'link text';
-                textarea.setRangeText(`[${selected}](${url})`, start, end, 'end');
-                textarea.focus();
-            });
+                function wrapSelection(before, after = before) {
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const selected = textarea.value.slice(start, end);
+                    textarea.setRangeText(before + selected + after, start, end, 'end');
+                    textarea.focus();
+                }
 
-            imageBtn?.addEventListener('click', () => imageInput.click());
+                function insertAtCursor(text) {
+                    const start = textarea.selectionStart;
+                    textarea.setRangeText(text, start, textarea.selectionEnd, 'end');
+                    textarea.focus();
+                }
 
-            imageInput?.addEventListener('change', async () => {
-                const file = imageInput.files[0];
-                if (!file) return;
+                boldBtn?.addEventListener('click', () => wrapSelection('**'));
+                italicBtn?.addEventListener('click', () => wrapSelection('*'));
 
-                const formData = new FormData();
-                formData.append('image', file);
+                linkBtn?.addEventListener('click', () => {
+                    const url = prompt('Enter URL:');
+                    if (!url) return;
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const selected = textarea.value.slice(start, end) || 'link text';
+                    textarea.setRangeText(`[${selected}](${url})`, start, end, 'end');
+                    textarea.focus();
+                });
 
-                try {
-                    const res = await fetch('{{ route('comments.upload-image') }}', {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
-                                .content,
-                            'Accept': 'application/json',
-                        },
-                        body: formData,
-                    });
-                    const data = await res.json();
-                    if (data.url) {
-                        insertAtCursor(`![](${data.url})`);
+                imageBtn?.addEventListener('click', () => imageInput.click());
+
+                imageInput?.addEventListener('change', async () => {
+                    const file = imageInput.files[0];
+                    if (!file) return;
+
+                    const formData = new FormData();
+                    formData.append('image', file);
+
+                    try {
+                        const res = await fetch('{{ route('comments.upload-image') }}', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
+                                    .content,
+                                'Accept': 'application/json',
+                            },
+                            body: formData,
+                        });
+                        const data = await res.json();
+                        if (data.url) insertAtCursor(`![](${data.url})`);
+                    } catch (e) {
+                        alert('Image upload failed.');
+                    } finally {
+                        imageInput.value = '';
                     }
-                } catch (e) {
-                    alert('Image upload failed.');
-                } finally {
-                    imageInput.value = '';
-                }
-            });
+                });
 
-            emojiBtn?.addEventListener('click', (e) => {
-                e.stopPropagation();
-                emojiPicker.classList.toggle('hidden');
-            });
+                emojiBtn?.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    emojiPicker.classList.toggle('hidden');
+                });
 
-            document.addEventListener('click', () => emojiPicker.classList.add('hidden'));
+                document.addEventListener('click', () => emojiPicker.classList.add('hidden'));
 
-            emojiPicker?.addEventListener('click', (e) => {
-                const emoji = e.target.closest('[data-emoji]');
-                if (!emoji) return;
-                insertAtCursor(emoji.dataset.emoji);
-            });
+                emojiPicker?.addEventListener('click', (e) => {
+                    const emoji = e.target.closest('[data-emoji]');
+                    if (!emoji) return;
+                    insertAtCursor(emoji.dataset.emoji);
+                });
 
-            let previewOn = false;
-            previewBtn?.addEventListener('click', () => {
-                previewOn = !previewOn;
-                if (previewOn) {
-                    previewBox.innerHTML = renderMiniMarkdown(textarea.value) ||
-                        '<span class="text-gray-400">Nothing to preview.</span>';
-                    previewBox.classList.remove('hidden');
-                    textarea.classList.add('hidden');
-                    previewBtn.textContent = 'Edit';
-                } else {
-                    previewBox.classList.add('hidden');
-                    textarea.classList.remove('hidden');
-                    previewBtn.textContent = '👁 Preview';
-                }
-            });
+                let previewOn = false;
+                previewBtn?.addEventListener('click', () => {
+                    previewOn = !previewOn;
+                    if (previewOn) {
+                        previewBox.innerHTML = renderMiniMarkdown(textarea.value) ||
+                            '<span class="text-gray-400">Nothing to preview.</span>';
+                        previewBox.classList.remove('hidden');
+                        textarea.classList.add('hidden');
+                        previewBtn.textContent = '✏️ Edit';
+                    } else {
+                        previewBox.classList.add('hidden');
+                        textarea.classList.remove('hidden');
+                        previewBtn.textContent = '👁 Preview';
+                    }
+                });
+            }
+
+            document.querySelectorAll('.rich-editor').forEach(setupRichEditor);
         })();
     </script>
 @endsection
