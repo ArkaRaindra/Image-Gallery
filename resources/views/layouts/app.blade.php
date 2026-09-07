@@ -14,6 +14,7 @@
     @php
         $isAuthSection = request()->routeIs('login') || request()->routeIs('register');
         $isAccountSection = request()->routeIs('account.*');
+        $isCommentsSection = request()->routeIs('comments.index');
     @endphp
     <header class="bg-gallery-green border-b border-green-800">
         <div class="w-full px-6 py-2 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm font-medium">
@@ -23,14 +24,15 @@
 
             @auth
                 <a href="{{ route('account.show') }}"
-                    class="text-green-900 {{ request()->routeIs('account.*') ? 'font-bold text-base' : '' }}">My Account</a>
+                    class="text-green-900 {{ $isAccountSection ? 'font-bold text-base' : '' }}">My Account</a>
             @else
                 <a href="{{ route('login') }}" class="text-red-400">Login</a>
             @endauth
 
             <a href="{{ route('posts.index') }}"
                 class="text-green-900 {{ request()->routeIs('posts.index') || request()->routeIs('posts.show') ? 'font-bold text-base' : '' }}">Posts</a>
-            <span class="text-gray-600 cursor-not-allowed">Comments</span>
+            <a href="{{ route('comments.index') }}"
+                class="text-green-900 {{ $isCommentsSection ? 'font-bold text-base' : '' }}">Comments</a>
             <span class="text-gray-600 cursor-not-allowed">Notes</span>
             <span class="text-gray-600 cursor-not-allowed">Artists</span>
             <span class="text-gray-600 cursor-not-allowed">Tags</span>
@@ -56,10 +58,26 @@
                         @csrf
                         <button type="submit" class="hover:text-gray-200 cursor-pointer">Log out</button>
                     </form>
+                @elseif ($isCommentsSection)
+                    <a href="{{ route('comments.index') }}"
+                        class="hover:text-gray-200 cursor-pointer font-bold text-gray-200">Comments</a>
+                    @auth
+                        <a href="{{ route('comments.index', ['on_my_uploads' => 1]) }}"
+                            class="hover:text-gray-200 cursor-pointer">On My Uploads</a>
+                    @else
+                        <span class="cursor-not-allowed">On My Uploads</span>
+                    @endauth
+                    <span class="cursor-not-allowed">Search</span>
+                    <span class="cursor-not-allowed">Help</span>
                 @else
                     <a href="{{ route('posts.index') }}"
                         class="hover:text-gray-200 cursor-pointer {{ request()->routeIs('posts.index') || request()->routeIs('posts.show') ? 'font-bold text-gray-200' : '' }}">Listing</a>
-                    <a href="/admin/posts/create" class="hover:text-gray-200 cursor-pointer">Upload</a>
+                    @auth
+                        <a href="{{ auth()->user()->isAdmin() ? '/admin/posts/create' : route('upload.create') }}"
+                            class="hover:text-gray-200 cursor-pointer">Upload</a>
+                    @else
+                        <a href="{{ route('login') }}" class="hover:text-gray-200 cursor-pointer">Upload</a>
+                    @endauth
                     <span class="cursor-not-allowed">Hot</span>
                     @auth
                         <a href="{{ route('favorites.index') }}" class="hover:text-gray-200 cursor-pointer">Favorites</a>
@@ -74,6 +92,9 @@
     </header>
 
     <div class="w-full px-6 py-6 overflow-x-hidden">
+        @if (session('status'))
+            <div class="mb-4 px-4 py-2 rounded bg-sky-800 text-white text-sm">{{ session('status') }}</div>
+        @endif
         @yield('content')
     </div>
 </body>

@@ -4,6 +4,8 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,7 +16,7 @@ use Illuminate\Support\Facades\Storage;
 
 #[Fillable(['name', 'email', 'password', 'avatar_path'])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
@@ -41,18 +43,18 @@ class User extends Authenticatable
 
     public function avatarUrl(): ?string
     {
-        if (! $this->avatar_path) {
-            return null;
-        }
+        return $this->avatar_path
+            ? Storage::disk('public')->url($this->avatar_path)
+            : null;
+    }
 
-        $url = Storage::disk('public')->url($this->avatar_path);
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
 
-        try {
-            $url .= '?v=' . Storage::disk('public')->lastModified($this->avatar_path);
-        } catch (\Throwable) {
-            $url .= '?v=' . $this->updated_at->timestamp;
-        }
-
-        return $url;
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $this->isAdmin();
     }
 }

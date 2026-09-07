@@ -195,9 +195,21 @@
                                     <span class="font-medium text-gray-900">{{ $comment->author_name }}</span>
                                     <span>{{ $comment->created_at->diffForHumans() }}</span>
                                 </div>
-                                <div class="text-sm text-gray-800">
+                                <div class="text-sm text-gray-800 mb-1">
                                     {!! \App\Support\SimpleMarkdown::toHtml($comment->body) !!}
                                 </div>
+                                @if (auth()->user()?->isAdmin())
+                                    <form method="POST" action="{{ route('comments.destroy', $comment) }}"
+                                        onsubmit="return confirm('Delete this comment?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <input type="hidden" name="tags" value="{{ $tagQuery }}">
+                                        <button type="submit"
+                                            class="text-xs text-red-600 hover:underline cursor-pointer">
+                                            Delete
+                                        </button>
+                                    </form>
+                                @endif
                             </div>
                         </div>
                     @empty
