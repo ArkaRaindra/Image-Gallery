@@ -181,7 +181,7 @@
                     @forelse ($topLevelComments as $comment)
                         @php
                             $votedDirection = $votedComments[$comment->id] ?? null;
-                            $replies = $post->comments->where('parent_id', $comment->id);
+                            $replies = $post->comments->where('parent_id', $comment->id)->sortBy('created_at');
                         @endphp
                         <div class="rounded p-3">
                             <div class="flex gap-3">
