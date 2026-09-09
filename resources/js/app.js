@@ -246,7 +246,8 @@ document.addEventListener('click', (e) => {
     if (!form.classList.contains('hidden')) {
         const textarea = form.querySelector('textarea');
         if (!textarea.value) {
-            textarea.value = `@${btn.dataset.username} `;
+            const mentionName = btn.dataset.username.trim().replace(/\s+/g, '_');
+            textarea.value = `@${mentionName} `;
         }
         textarea.focus();
     }
@@ -340,12 +341,13 @@ function setupMentionAutocomplete(textarea) {
         [...list.children].forEach((li, i) => li.classList.toggle('bg-gray-800', i === activeIndex));
     }
 
-    function insertMention(username) {
+        function insertMention(username) {
+        const mentionName = username.trim().replace(/\s+/g, '_');
         const cursor = textarea.selectionStart;
         const before = textarea.value.slice(0, mentionStart);
         const after = textarea.value.slice(cursor);
-        textarea.value = before + '@' + username + ' ' + after;
-        const newPos = (before + '@' + username + ' ').length;
+        textarea.value = before + '@' + mentionName + ' ' + after;
+        const newPos = (before + '@' + mentionName + ' ').length;
         textarea.setSelectionRange(newPos, newPos);
         textarea.focus();
         closeList();
@@ -398,4 +400,18 @@ function setupMentionAutocomplete(textarea) {
 
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('textarea[name="body"]').forEach(setupMentionAutocomplete);
+});
+
+document.addEventListener('click', (e) => {
+    const editBtn = e.target.closest('.edit-toggle-btn');
+    if (editBtn) {
+        const form = document.querySelector(`.edit-form[data-comment-id="${editBtn.dataset.commentId}"]`);
+        form?.classList.toggle('hidden');
+        return;
+    }
+
+    const cancelBtn = e.target.closest('.cancel-edit-btn');
+    if (cancelBtn) {
+        cancelBtn.closest('.edit-form')?.classList.add('hidden');
+    }
 });

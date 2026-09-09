@@ -92,4 +92,25 @@ class CommentController extends Controller
             'url' => Storage::disk('public')->url($path),
         ]);
     }
+
+    public function update(Request $request, Comment $comment): RedirectResponse
+    {
+        abort_unless($request->user()->id === $comment->user_id, 403);
+
+        $data = $request->validate([
+            'body' => ['required', 'string', 'max:5000'],
+        ]);
+
+        $comment->update(['body' => $data['body']]);
+
+        $post = $comment->post;
+
+        if ($post) {
+            $tagsQuery = $request->string('tags')->toString();
+
+            return redirect(route('posts.show', ['post' => $post, 'tags' => $tagsQuery]) . '#comments');
+        }
+
+        return redirect()->route('comments.index');
+    }
 }

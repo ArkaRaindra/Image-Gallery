@@ -215,7 +215,12 @@
                                                 {{ $comment->author_name }}
                                             @endif
                                         </span>
-                                        <span>{{ $comment->created_at->diffForHumans() }}</span>
+                                        <span>
+                                            {{ $comment->created_at->diffForHumans() }}
+                                            @if ($comment->updated_at->gt($comment->created_at))
+                                                <span class="italic text-gray-400">(edited)</span>
+                                            @endif
+                                        </span>
                                     </div>
                                     <div class="text-sm text-gray-800 mb-1">
                                         {!! \App\Support\SimpleMarkdown::toHtml($comment->body) !!}
@@ -247,6 +252,11 @@
                                                 data-username="{{ $comment->author_name }}"
                                                 data-comment-id="{{ $comment->id }}">Reply</button>
                                         @endauth
+                                        @if (auth()->id() === $comment->user_id)
+                                            <button type="button"
+                                                class="edit-toggle-btn text-sky-700 hover:underline cursor-pointer"
+                                                data-comment-id="{{ $comment->id }}">Edit</button>
+                                        @endif
                                         @if (auth()->user()?->isAdmin())
                                             <form method="POST" action="{{ route('comments.destroy', $comment) }}"
                                                 onsubmit="return confirm('Delete this comment?')">
@@ -258,6 +268,31 @@
                                             </form>
                                         @endif
                                     </div>
+
+                                    @if (auth()->id() === $comment->user_id)
+                                        <form method="POST" action="{{ route('comments.update', $comment) }}"
+                                            class="edit-form hidden mt-2 space-y-2"
+                                            data-comment-id="{{ $comment->id }}">
+                                            @csrf
+                                            @method('PUT')
+                                            <input type="hidden" name="tags" value="{{ $tagQuery }}">
+                                            @include('posts._comment-editor', [
+                                                'rows' => 3,
+                                                'placeholder' => 'Edit your comment...',
+                                                'value' => $comment->body,
+                                            ])
+                                            <div class="flex gap-2">
+                                                <button type="submit"
+                                                    class="px-2 py-1 rounded bg-green-700 hover:bg-green-800 text-white text-xs cursor-pointer">
+                                                    Save
+                                                </button>
+                                                <button type="button"
+                                                    class="cancel-edit-btn px-2 py-1 rounded bg-gray-300 hover:bg-gray-400 text-xs cursor-pointer">
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </form>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -293,7 +328,7 @@
                                 @foreach ($replies as $reply)
                                     @php $replyVoted = $votedComments[$reply->id] ?? null; @endphp
                                     <div class="flex gap-2 {{ $loop->index >= 3 ? 'extra-reply hidden' : '' }}">
-                                                                                <div
+                                        <div
                                             class="w-7 h-7 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center shrink-0">
                                             @if ($reply->user)
                                                 <a href="{{ route('users.show', $reply->user) }}"
@@ -325,7 +360,12 @@
                                                         {{ $reply->author_name }}
                                                     @endif
                                                 </span>
-                                                <span>{{ $reply->created_at->diffForHumans() }}</span>
+                                                <span>
+                                                    {{ $reply->created_at->diffForHumans() }}
+                                                    @if ($reply->updated_at->gt($reply->created_at))
+                                                        <span class="italic text-gray-400">(edited)</span>
+                                                    @endif
+                                                </span>
                                             </div>
                                             <div class="text-xs text-gray-800">
                                                 {!! \App\Support\SimpleMarkdown::toHtml($reply->body) !!}
@@ -336,8 +376,9 @@
                                                     data-voted="{{ $replyVoted }}">
                                                     <button type="button" data-comment-vote="up"
                                                         class="{{ $replyVoted === 'up' ? 'text-green-400' : 'hover:text-green-400' }} cursor-pointer">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                                                            fill="none" stroke="currentColor" stroke-width="2.5"
+                                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                                            viewBox="0 0 24 24" fill="none"
+                                                            stroke="currentColor" stroke-width="2.5"
                                                             stroke-linecap="round" stroke-linejoin="round"
                                                             class="w-2.5 h-2.5">
                                                             <path d="M12 20V4M5 11l7-7 7 7" />
@@ -346,16 +387,23 @@
                                                     <span data-comment-score>{{ $reply->score }}</span>
                                                     <button type="button" data-comment-vote="down"
                                                         class="{{ $replyVoted === 'down' ? 'text-red-400' : 'hover:text-red-400' }} cursor-pointer">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                                                            fill="none" stroke="currentColor" stroke-width="2.5"
+                                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                                            viewBox="0 0 24 24" fill="none"
+                                                            stroke="currentColor" stroke-width="2.5"
                                                             stroke-linecap="round" stroke-linejoin="round"
                                                             class="w-2.5 h-2.5">
                                                             <path d="M12 4v16M5 13l7 7 7-7" />
                                                         </svg>
                                                     </button>
                                                 </span>
+                                                @if (auth()->id() === $reply->user_id)
+                                                    <button type="button"
+                                                        class="edit-toggle-btn text-sky-700 hover:underline cursor-pointer"
+                                                        data-comment-id="{{ $reply->id }}">Edit</button>
+                                                @endif
                                                 @if (auth()->user()?->isAdmin())
-                                                    <form method="POST" action="{{ route('comments.destroy', $reply) }}"
+                                                    <form method="POST"
+                                                        action="{{ route('comments.destroy', $reply) }}"
                                                         onsubmit="return confirm('Delete this comment?')" class="inline">
                                                         @csrf
                                                         @method('DELETE')
@@ -366,6 +414,31 @@
                                                     </form>
                                                 @endif
                                             </div>
+
+                                            @if (auth()->id() === $reply->user_id)
+                                                <form method="POST" action="{{ route('comments.update', $reply) }}"
+                                                    class="edit-form hidden mt-2 space-y-2"
+                                                    data-comment-id="{{ $reply->id }}">
+                                                    @csrf
+                                                    @method('PUT')
+                                                    <input type="hidden" name="tags" value="{{ $tagQuery }}">
+                                                    @include('posts._comment-editor', [
+                                                        'rows' => 2,
+                                                        'placeholder' => 'Edit your reply...',
+                                                        'value' => $reply->body,
+                                                    ])
+                                                    <div class="flex gap-2">
+                                                        <button type="submit"
+                                                            class="px-2 py-1 rounded bg-green-700 hover:bg-green-800 text-white text-xs cursor-pointer">
+                                                            Save
+                                                        </button>
+                                                        <button type="button"
+                                                            class="cancel-edit-btn px-2 py-1 rounded bg-gray-300 hover:bg-gray-400 text-xs cursor-pointer">
+                                                            Cancel
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            @endif
                                         </div>
                                     </div>
                                 @endforeach
@@ -601,98 +674,6 @@
             }
 
             document.querySelectorAll('.rich-editor').forEach(setupRichEditor);
-        })();
-
-        (function() {
-            const textarea = document.getElementById('cm-textarea');
-            if (!textarea) return;
-
-            let mentionList = null;
-            let mentionStart = -1;
-
-            function createMentionList() {
-                const list = document.createElement('ul');
-                list.className = 'fixed z-50 hidden bg-white border border-gray-300 rounded shadow-lg max-h-64 overflow-y-auto text-sm';
-                document.body.appendChild(list);
-                return list;
-            }
-
-            mentionList = createMentionList();
-
-            textarea.addEventListener('keydown', async (e) => {
-                const cursor = textarea.selectionStart;
-                const textBefore = textarea.value.slice(0, cursor);
-                const match = textBefore.match(/@([\w]+(?:\s[\w]+)*$)/);
-
-                if (!match) {
-                    if (e.key === 'Backspace' && mentionList) {
-                        mentionList.classList.add('hidden');
-                    }
-                    if (e.key === 'Escape') {
-                        mentionList.classList.add('hidden');
-                    }
-                    return;
-                }
-
-                const query = match[1];
-
-                if (e.key === 'Backspace' && !query) {
-                    mentionList.classList.add('hidden');
-                    return;
-                }
-
-                if (e.key === 'Escape') {
-                    mentionList.classList.add('hidden');
-                    return;
-                }
-
-                if (query.length > 0) {
-                    e.preventDefault();
-                    mentionStart = cursor - match[0].length;
-
-                    const res = await fetch('{{ route('users.autocomplete') }}?q=' + encodeURIComponent(query));
-                    const users = await res.json();
-
-                    if (users.length === 0) {
-                        mentionList.classList.add('hidden');
-                        return;
-                    }
-
-                    mentionList.innerHTML = users.map((user) => {
-                        const safeName = user.name.replace(/\s+/g, '_');
-                        return `<li class="flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-gray-100" data-mention="${safeName}">
-                            <span class="w-5 h-5 rounded-full bg-gray-300 flex items-center justify-center text-xs overflow-hidden">
-                                ${user.avatar ? `<img src="${user.avatar}" class="w-full h-full object-cover">` : user.initial}
-                            </span>
-                            <span>${user.name}</span>
-                        </li>`;
-                    }).join('');
-
-                    mentionList.classList.remove('hidden');
-
-                    const rect = textarea.getBoundingClientRect();
-                    mentionList.style.left = rect.left + 'px';
-                    mentionList.style.top = (rect.bottom + window.scrollY + 4) + 'px';
-                    mentionList.style.width = Math.min(rect.width, 240) + 'px';
-
-                    mentionList.querySelectorAll('li').forEach((item, i) => {
-                        item.addEventListener('mousedown', (ev) => {
-                            ev.preventDefault();
-                            const mention = item.dataset.mention;
-                            const before = textarea.value.slice(0, mentionStart);
-                            const after = textarea.value.slice(cursor);
-                            textarea.value = before + '@' + mention + after;
-                            textarea.focus();
-                            textarea.setSelectionRange(before.length + 1 + mention.length, before.length + 1 + mention.length);
-                            mentionList.classList.add('hidden');
-                        });
-                    });
-                } else {
-                    mentionList.classList.add('hidden');
-                }
-            });
-
-            document.addEventListener('click', () => mentionList?.classList.add('hidden'));
         })();
     </script>
 @endsection
