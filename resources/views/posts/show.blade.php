@@ -187,9 +187,18 @@
                             <div class="flex gap-3">
                                 <div
                                     class="w-10 h-10 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center shrink-0">
-                                    @if ($comment->user?->avatarUrl())
-                                        <img src="{{ $comment->user->avatarUrl() }}" alt="{{ $comment->author_name }}"
-                                            class="w-full h-full object-cover">
+                                    @if ($comment->user)
+                                        <a href="{{ route('users.show', $comment->user) }}"
+                                            class="w-full h-full flex items-center justify-center">
+                                            @if ($comment->user->avatarUrl())
+                                                <img src="{{ $comment->user->avatarUrl() }}"
+                                                    alt="{{ $comment->author_name }}" class="w-full h-full object-cover">
+                                            @else
+                                                <span class="text-sm font-bold text-gray-600">
+                                                    {{ strtoupper(substr($comment->author_name, 0, 1)) }}
+                                                </span>
+                                            @endif
+                                        </a>
                                     @else
                                         <span class="text-sm font-bold text-gray-600">
                                             {{ strtoupper(substr($comment->author_name, 0, 1)) }}
@@ -198,7 +207,14 @@
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
-                                        <span class="font-medium text-gray-900">{{ $comment->author_name }}</span>
+                                        <span class="font-medium text-gray-900">
+                                            @if ($comment->user)
+                                                <a href="{{ route('users.show', $comment->user) }}"
+                                                    class="hover:underline">{{ $comment->author_name }}</a>
+                                            @else
+                                                {{ $comment->author_name }}
+                                            @endif
+                                        </span>
                                         <span>{{ $comment->created_at->diffForHumans() }}</span>
                                     </div>
                                     <div class="text-sm text-gray-800 mb-1">
@@ -253,7 +269,10 @@
                                 <input type="hidden" name="tags" value="{{ $tagQuery }}">
                                 <input type="hidden" name="parent_id" value="{{ $comment->id }}">
 
-                                @include('posts._comment-editor', ['rows' => 2, 'placeholder' => 'Write a reply...'])
+                                @include('posts._comment-editor', [
+                                    'rows' => 2,
+                                    'placeholder' => 'Write a reply...',
+                                ])
 
                                 <button type="submit"
                                     class="px-2 py-1 rounded bg-green-700 hover:bg-green-800 text-white text-xs cursor-pointer">
@@ -274,12 +293,21 @@
                                 @foreach ($replies as $reply)
                                     @php $replyVoted = $votedComments[$reply->id] ?? null; @endphp
                                     <div class="flex gap-2 {{ $loop->index >= 3 ? 'extra-reply hidden' : '' }}">
-                                        <div
+                                                                                <div
                                             class="w-7 h-7 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center shrink-0">
-                                            @if ($reply->user?->avatarUrl())
-                                                <img src="{{ $reply->user->avatarUrl() }}"
-                                                    alt="{{ $reply->author_name }}"
-                                                    class="w-full h-full object-cover">
+                                            @if ($reply->user)
+                                                <a href="{{ route('users.show', $reply->user) }}"
+                                                    class="w-full h-full flex items-center justify-center">
+                                                    @if ($reply->user->avatarUrl())
+                                                        <img src="{{ $reply->user->avatarUrl() }}"
+                                                            alt="{{ $reply->author_name }}"
+                                                            class="w-full h-full object-cover">
+                                                    @else
+                                                        <span class="text-xs font-bold text-gray-600">
+                                                            {{ strtoupper(substr($reply->author_name, 0, 1)) }}
+                                                        </span>
+                                                    @endif
+                                                </a>
                                             @else
                                                 <span class="text-xs font-bold text-gray-600">
                                                     {{ strtoupper(substr($reply->author_name, 0, 1)) }}
@@ -289,8 +317,14 @@
                                         <div class="flex-1 min-w-0">
                                             <div
                                                 class="flex items-center justify-between text-[11px] text-gray-500 mb-0.5">
-                                                <span
-                                                    class="font-medium text-gray-900">{{ $reply->author_name }}</span>
+                                                <span class="font-medium text-gray-900">
+                                                    @if ($reply->user)
+                                                        <a href="{{ route('users.show', $reply->user) }}"
+                                                            class="hover:underline">{{ $reply->author_name }}</a>
+                                                    @else
+                                                        {{ $reply->author_name }}
+                                                    @endif
+                                                </span>
                                                 <span>{{ $reply->created_at->diffForHumans() }}</span>
                                             </div>
                                             <div class="text-xs text-gray-800">
@@ -302,9 +336,8 @@
                                                     data-voted="{{ $replyVoted }}">
                                                     <button type="button" data-comment-vote="up"
                                                         class="{{ $replyVoted === 'up' ? 'text-green-400' : 'hover:text-green-400' }} cursor-pointer">
-                                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                                            viewBox="0 0 24 24" fill="none"
-                                                            stroke="currentColor" stroke-width="2.5"
+                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                                            fill="none" stroke="currentColor" stroke-width="2.5"
                                                             stroke-linecap="round" stroke-linejoin="round"
                                                             class="w-2.5 h-2.5">
                                                             <path d="M12 20V4M5 11l7-7 7 7" />
@@ -313,9 +346,8 @@
                                                     <span data-comment-score>{{ $reply->score }}</span>
                                                     <button type="button" data-comment-vote="down"
                                                         class="{{ $replyVoted === 'down' ? 'text-red-400' : 'hover:text-red-400' }} cursor-pointer">
-                                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                                            viewBox="0 0 24 24" fill="none"
-                                                            stroke="currentColor" stroke-width="2.5"
+                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                                            fill="none" stroke="currentColor" stroke-width="2.5"
                                                             stroke-linecap="round" stroke-linejoin="round"
                                                             class="w-2.5 h-2.5">
                                                             <path d="M12 4v16M5 13l7 7 7-7" />
@@ -323,8 +355,7 @@
                                                     </button>
                                                 </span>
                                                 @if (auth()->user()?->isAdmin())
-                                                    <form method="POST"
-                                                        action="{{ route('comments.destroy', $reply) }}"
+                                                    <form method="POST" action="{{ route('comments.destroy', $reply) }}"
                                                         onsubmit="return confirm('Delete this comment?')" class="inline">
                                                         @csrf
                                                         @method('DELETE')

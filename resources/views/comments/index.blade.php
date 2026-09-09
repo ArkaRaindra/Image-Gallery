@@ -58,7 +58,14 @@
                 @endif
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 mb-1">
-                        <span class="font-semibold text-sky-700">{{ $comment->author_name }}</span>
+                        <span class="font-semibold text-sky-700">
+                            @if ($comment->user)
+                                <a href="{{ route('users.show', $comment->user) }}"
+                                    class="hover:underline">{{ $comment->author_name }}</a>
+                            @else
+                                {{ $comment->author_name }}
+                            @endif
+                        </span>
                         <span class="text-xs text-gray-500">{{ $comment->created_at->diffForHumans() }}</span>
                         @if ($comment->parent_id)
                             <span class="text-xs text-gray-400 italic">(reply)</span>
@@ -73,8 +80,8 @@
                             <button type="button" data-comment-vote="up"
                                 class="{{ $votedDirection === 'up' ? 'text-green-400' : 'hover:text-green-400' }} cursor-pointer">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                                    stroke-linejoin="round" class="w-3 h-3">
+                                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                                    class="w-3 h-3">
                                     <path d="M12 20V4M5 11l7-7 7 7" />
                                 </svg>
                             </button>
@@ -82,8 +89,8 @@
                             <button type="button" data-comment-vote="down"
                                 class="{{ $votedDirection === 'down' ? 'text-red-400' : 'hover:text-red-400' }} cursor-pointer">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                                    stroke-linejoin="round" class="w-3 h-3">
+                                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                                    class="w-3 h-3">
                                     <path d="M12 4v16M5 13l7 7 7-7" />
                                 </svg>
                             </button>

@@ -6,6 +6,7 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommentsPageController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\UserController;
@@ -38,3 +39,4 @@ Route::get('/account', [AccountController::class, 'show'])->name('account.show')
 Route::post('/account/avatar', [AccountController::class, 'updateAvatar'])->name('account.avatar')->middleware('auth');
 
 Route::get('/users/autocomplete', [UserController::class, 'autocomplete'])->name('users.autocomplete');
+Route::get('/users/{user}', [ProfileController::class, 'show'])->name('users.show');
