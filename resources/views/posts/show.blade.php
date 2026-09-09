@@ -602,5 +602,97 @@
 
             document.querySelectorAll('.rich-editor').forEach(setupRichEditor);
         })();
+
+        (function() {
+            const textarea = document.getElementById('cm-textarea');
+            if (!textarea) return;
+
+            let mentionList = null;
+            let mentionStart = -1;
+
+            function createMentionList() {
+                const list = document.createElement('ul');
+                list.className = 'fixed z-50 hidden bg-white border border-gray-300 rounded shadow-lg max-h-64 overflow-y-auto text-sm';
+                document.body.appendChild(list);
+                return list;
+            }
+
+            mentionList = createMentionList();
+
+            textarea.addEventListener('keydown', async (e) => {
+                const cursor = textarea.selectionStart;
+                const textBefore = textarea.value.slice(0, cursor);
+                const match = textBefore.match(/@([\w]+(?:\s[\w]+)*$)/);
+
+                if (!match) {
+                    if (e.key === 'Backspace' && mentionList) {
+                        mentionList.classList.add('hidden');
+                    }
+                    if (e.key === 'Escape') {
+                        mentionList.classList.add('hidden');
+                    }
+                    return;
+                }
+
+                const query = match[1];
+
+                if (e.key === 'Backspace' && !query) {
+                    mentionList.classList.add('hidden');
+                    return;
+                }
+
+                if (e.key === 'Escape') {
+                    mentionList.classList.add('hidden');
+                    return;
+                }
+
+                if (query.length > 0) {
+                    e.preventDefault();
+                    mentionStart = cursor - match[0].length;
+
+                    const res = await fetch('{{ route('users.autocomplete') }}?q=' + encodeURIComponent(query));
+                    const users = await res.json();
+
+                    if (users.length === 0) {
+                        mentionList.classList.add('hidden');
+                        return;
+                    }
+
+                    mentionList.innerHTML = users.map((user) => {
+                        const safeName = user.name.replace(/\s+/g, '_');
+                        return `<li class="flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-gray-100" data-mention="${safeName}">
+                            <span class="w-5 h-5 rounded-full bg-gray-300 flex items-center justify-center text-xs overflow-hidden">
+                                ${user.avatar ? `<img src="${user.avatar}" class="w-full h-full object-cover">` : user.initial}
+                            </span>
+                            <span>${user.name}</span>
+                        </li>`;
+                    }).join('');
+
+                    mentionList.classList.remove('hidden');
+
+                    const rect = textarea.getBoundingClientRect();
+                    mentionList.style.left = rect.left + 'px';
+                    mentionList.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+                    mentionList.style.width = Math.min(rect.width, 240) + 'px';
+
+                    mentionList.querySelectorAll('li').forEach((item, i) => {
+                        item.addEventListener('mousedown', (ev) => {
+                            ev.preventDefault();
+                            const mention = item.dataset.mention;
+                            const before = textarea.value.slice(0, mentionStart);
+                            const after = textarea.value.slice(cursor);
+                            textarea.value = before + '@' + mention + after;
+                            textarea.focus();
+                            textarea.setSelectionRange(before.length + 1 + mention.length, before.length + 1 + mention.length);
+                            mentionList.classList.add('hidden');
+                        });
+                    });
+                } else {
+                    mentionList.classList.add('hidden');
+                }
+            });
+
+            document.addEventListener('click', () => mentionList?.classList.add('hidden'));
+        })();
     </script>
 @endsection

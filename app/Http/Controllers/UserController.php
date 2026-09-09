@@ -18,9 +18,17 @@ class UserController extends Controller
 
         $users = User::where('name', 'like', $q . '%')
             ->orderBy('name')
-            ->limit(0)
-            ->get(['id', 'name']);
+            ->limit(10)
+            ->get(['id', 'name', 'avatar_path']);
 
-        return response()->json($users);
+        return response()->json($users->map(function ($user) {
+            return [
+                'id' => $user->id,
+                'name' => $user->name,
+                'initial' => strtoupper(substr($user->name, 0, 1)),
+                'avatar' => $user->avatarUrl(),
+                'profile_url' => route('users.show', $user),
+            ];
+        }));
     }
 }

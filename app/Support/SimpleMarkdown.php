@@ -22,10 +22,17 @@ class SimpleMarkdown
             $html
         );
         
-        // Mentions: @username
-        $html = preg_replace(
-            '/@([a-zA-Z0-9_.]+)/',
-            '<span class="text-sky-700 font-semibold">@$1</span>',
+        // Mentions: @username (supports multi-word names with underscores)
+        $html = preg_replace_callback(
+            '/@([a-zA-Z0-9_]+)/',
+            function ($matches) {
+                $username = str_replace('_', ' ', $matches[1]);
+                $user = \App\Models\User::where('name', $username)->first();
+                if ($user) {
+                    return '<a href="' . route('users.show', $user) . '" class="text-sky-700 font-semibold">@' . e($user->name) . '</a>';
+                }
+                return '<span class="text-sky-700 font-semibold">@' . e($matches[1]) . '</span>';
+            },
             $html
         );
 
