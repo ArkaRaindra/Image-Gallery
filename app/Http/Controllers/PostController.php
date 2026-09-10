@@ -24,12 +24,13 @@ class PostController extends Controller
 
         $matchingPostIds = $this->search->search($tagsQuery)->pluck('id');
 
-        $sidebarTags = blank($tagsQuery)
-            ? Tag::orderByDesc('post_count')->limit(40)->get()
-            : Tag::whereHas('posts', fn($q) => $q->whereIn('posts.id', $matchingPostIds))
-            ->orderByDesc('post_count')
-            ->limit(40)
-            ->get();
+                $sidebarTags = blank($tagsQuery)
+            ? Tag::where('post_count', '>', 0)->orderByDesc('post_count')->limit(40)->get()
+            : Tag::whereHas('posts', fn ($q) => $q->whereIn('posts.id', $matchingPostIds))
+                ->where('post_count', '>', 0)
+                ->orderByDesc('post_count')
+                ->limit(40)
+                ->get();
 
         $singleTag = $this->resolveSingleTag($tagsQuery);
 

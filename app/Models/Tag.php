@@ -41,12 +41,16 @@ class Tag extends Model
         return $query->where('category', $category);
     }
 
-    public static function recalculateAllPostCounts(): void
+       public static function recalculateAllPostCounts(): void
     {
         DB::statement('
             UPDATE tags
             LEFT JOIN (
-                SELECT tag_id, COUNT(*) AS cnt FROM post_tags GROUP BY tag_id
+                SELECT pt.tag_id, COUNT(*) AS cnt
+                FROM post_tags pt
+                INNER JOIN posts p ON p.id = pt.post_id
+                WHERE p.is_approved = 1
+                GROUP BY pt.tag_id
             ) counts ON counts.tag_id = tags.id
             SET tags.post_count = COALESCE(counts.cnt, 0)
         ');

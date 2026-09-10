@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Posts\Tables;
 
+use App\Models\Tag;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -60,7 +61,10 @@ class PostsTable
                     BulkAction::make('approve')
                         ->label('Approve')
                         ->icon(Heroicon::Check)
-                        ->action(fn ($records) => $records->each->update(['is_approved' => true])),
+                        ->action(function ($records) {
+                            $records->each->update(['is_approved' => true]);
+                            Tag::recalculateAllPostCounts();
+                        }),
                 ]),
             ]);
     }
