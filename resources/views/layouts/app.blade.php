@@ -18,7 +18,7 @@
     @endphp
     <header class="bg-gallery-green border-b border-green-800">
         <div class="w-full px-6 py-2 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm font-medium">
-            <a href="{{ route('posts.index') }}">
+            <a href="{{ route('home') }}">
                 <img src="{{ asset('images/VSC.png') }}" alt="Logo" width="80" height="80">
             </a>
 
