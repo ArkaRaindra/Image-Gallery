@@ -18,7 +18,7 @@ class UploadController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'file' => ['required', 'image', 'max:20480'],
+            'file' => ['required', 'file', 'mimes:jpg,jpeg,png,gif,webp,mp4', 'max:102400'],
             'rating' => ['required', 'in:general,sensitive,questionable,explicit'],
             'tags' => ['required', 'string'],
             'source' => ['nullable', 'url', 'max:255'],

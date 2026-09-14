@@ -52,8 +52,13 @@
                 @if ($comment->post)
                     <a href="{{ route('posts.show', $comment->post) }}"
                         class="flex items-center justify-center w-24 h-24 rounded overflow-hidden bg-gray-900 shrink-0">
-                        <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($comment->post->thumbnail_path) }}"
-                            alt="post {{ $comment->post->id }}" class="max-w-full max-h-full object-contain">
+                        @if ($comment->post->isVideo())
+                            <video src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($comment->post->thumbnail_path) }}"
+                                class="max-w-full max-h-full object-contain" muted preload="metadata"></video>
+                        @else
+                            <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($comment->post->thumbnail_path) }}"
+                                alt="post {{ $comment->post->id }}" class="max-w-full max-h-full object-contain">
+                        @endif
                     </a>
                 @endif
                 <div class="flex-1 min-w-0">
@@ -116,6 +121,6 @@
     </div>
 
     <div class="mt-6">
-        {{ $comments->links() }}
+        {{ $comments->links('partials.pagination-centered') }}
     </div>
 @endsection

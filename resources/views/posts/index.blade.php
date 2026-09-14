@@ -121,9 +121,16 @@
                             <a href="{{ route('posts.show', $post) }}" class="block rounded overflow-hidden">
                                 <div class="flex items-center justify-center rounded-t overflow-hidden"
                                     style="height: var(--thumb-size);">
-                                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail_path) }}"
-                                        alt="post {{ $post->id }}" loading="lazy"
-                                        class="max-w-full max-h-full object-contain">
+                                    @if ($post->isVideo())
+                                        <video src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail_path) }}"
+                                            class="max-w-full max-h-full object-contain" muted loop playsinline
+                                            preload="metadata"
+                                            onmouseover="this.play()" onmouseout="this.pause(); this.currentTime = 0;"></video>
+                                    @else
+                                        <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail_path) }}"
+                                            alt="post {{ $post->id }}" loading="lazy"
+                                            class="max-w-full max-h-full object-contain">
+                                    @endif
                                 </div>
                                 <div class="flex items-center justify-center gap-1.5 text-xs text-gray-500 py-1"
                                     data-vote-widget data-post-id="{{ $post->id }}"

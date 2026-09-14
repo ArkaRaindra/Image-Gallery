@@ -26,7 +26,8 @@
             @csrf
             <div>
                 <label class="block text-sm font-semibold mb-1">File</label>
-                <input type="file" name="file" accept="image/*" required class="text-sm">
+                <input type="file" name="file" accept="image/*,video/mp4" required class="text-sm">
+                <p class="text-xs text-gray-600 mt-1">Images or MP4 video, up to 100MB.</p>
             </div>
             <div>
                 <label class="block text-sm font-semibold mb-1">Rating</label>

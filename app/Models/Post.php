@@ -33,6 +33,13 @@ class Post extends Model
         'is_approved' => 'boolean',
     ];
 
+    public const VIDEO_EXTENSIONS = ['mp4', 'webm', 'mov', 'avi', 'mkv'];
+
+    public function isVideo(): bool
+    {
+        return in_array(strtolower($this->file_ext), self::VIDEO_EXTENSIONS, true);
+    }
+
     protected static function booted(): void
     {
         static::deleted(function (self $post) {

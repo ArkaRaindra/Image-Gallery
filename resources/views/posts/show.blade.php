@@ -127,9 +127,16 @@
                     class="text-white/70 hover:text-white cursor-pointer">×</button>
             </div>
 
-            <div class="relative rounded p-2 mb-3">
-                <img id="post-image" src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->file_path) }}"
-                    alt="post {{ $post->id }}" class="w-full max-h-[80vh] object-contain rounded mx-auto">
+                        <div class="relative rounded p-2 mb-3">
+                @if ($post->isVideo())
+                    <video id="post-image"
+                        src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->file_path) }}"
+                        controls class="w-full max-h-[80vh] object-contain rounded mx-auto"></video>
+                @else
+                    <img id="post-image"
+                        src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->file_path) }}"
+                        alt="post {{ $post->id }}" class="w-full max-h-[80vh] object-contain rounded mx-auto">
+                @endif
 
                 @auth
                     <button type="button" id="fav-btn" data-post-id="{{ $post->id }}"

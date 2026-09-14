@@ -17,7 +17,7 @@ class PostForm
             ->components([
                 FileUpload::make('file_path')
                     ->label('File')
-                    ->image()
+                    ->acceptedFileTypes(['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'video/mp4'])
                     ->disk('public')
                     ->visibility('public')
                     ->directory('posts')
