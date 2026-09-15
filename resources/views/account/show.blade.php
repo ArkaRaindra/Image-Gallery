@@ -58,7 +58,7 @@
         </div>
         <div class="flex flex-wrap gap-2">
             @forelse ($recentFavorites as $post)
-                <a href="{{ route('posts.show', $post) }}" class="block w-24 h-24 rounded overflow-hidden bg-gray-900">
+                <a href="{{ route('posts.show', $post) }}" class="block w-24 h-24 rounded overflow-hidden">
                     <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail_path) }}"
                         alt="post {{ $post->id }}" class="w-full h-full object-cover">
                 </a>
@@ -75,7 +75,7 @@
         </div>
         <div class="flex flex-wrap gap-2">
             @forelse ($recentPosts as $post)
-                <a href="{{ route('posts.show', $post) }}" class="block w-24 h-24 rounded overflow-hidden bg-gray-900">
+                <a href="{{ route('posts.show', $post) }}" class="block w-24 h-24 rounded overflow-hidden">
                     <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail_path) }}"
                         alt="post {{ $post->id }}" class="w-full h-full object-cover">
                 </a>

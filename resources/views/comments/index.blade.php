@@ -51,10 +51,12 @@
             <div class="flex gap-4">
                 @if ($comment->post)
                     <a href="{{ route('posts.show', $comment->post) }}"
-                        class="flex items-center justify-center w-24 h-24 rounded overflow-hidden bg-gray-900 shrink-0">
-                        @if ($comment->post->isVideo())
-                            <video src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($comment->post->thumbnail_path) }}"
-                                class="max-w-full max-h-full object-contain" muted preload="metadata"></video>
+                        class="flex items-center justify-center w-[200px] h-[200px] rounded overflow-hidden shrink-0">
+                        @if ($comment->post->thumbnailIsVideo())
+                            <video
+                                src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($comment->post->thumbnail_path) }}"
+                                class="max-w-full max-h-full object-contain" muted loop playsinline preload="metadata"
+                                onmouseover="this.play()" onmouseout="this.pause(); this.currentTime = 0;"></video>
                         @else
                             <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($comment->post->thumbnail_path) }}"
                                 alt="post {{ $comment->post->id }}" class="max-w-full max-h-full object-contain">

@@ -17,6 +17,7 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/posts', [PostController::class, 'index'])->name('posts.index');
 Route::get('/posts/{post}', [PostController::class, 'show'])->name('posts.show');
 Route::post('/posts/{post}/vote', [PostController::class, 'vote'])->name('posts.vote');
+Route::post('/posts/{post}/thumbnail', [PostController::class, 'updateThumbnail'])->name('posts.thumbnail')->middleware('auth');
 Route::get('/posts/{post}/download', [PostController::class, 'download'])->name('posts.download');
 Route::post('/posts/{post}/comments', [CommentController::class, 'store'])->name('comments.store')->middleware('auth');
 Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy')->middleware('auth');

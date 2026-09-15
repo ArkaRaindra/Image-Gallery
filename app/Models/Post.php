@@ -40,6 +40,25 @@ class Post extends Model
         return in_array(strtolower($this->file_ext), self::VIDEO_EXTENSIONS, true);
     }
 
+    public function hasCustomThumbnail(): bool
+    {
+        return $this->thumbnail_path !== $this->file_path;
+    }
+
+    public function thumbnailIsVideo(): bool
+    {
+        return in_array(strtolower(pathinfo($this->thumbnail_path, PATHINFO_EXTENSION)), self::VIDEO_EXTENSIONS, true);
+    }
+
+    public function canManageThumbnail(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        return $user->isAdmin() || $user->id === $this->uploader_id;
+    }
+
     protected static function booted(): void
     {
         static::deleted(function (self $post) {

@@ -99,6 +99,36 @@ class PostController extends Controller
         ]);
     }
 
+    public function updateThumbnail(Request $request, Post $post)
+    {
+        abort_unless($post->isVideo(), 400, 'Only video posts support a custom thumbnail.');
+        abort_unless($post->canManageThumbnail($request->user()), 403);
+
+        $data = $request->validate([
+            'thumbnail' => ['required', 'image', 'max:10240'],
+            'width' => ['nullable', 'integer', 'min:1'],
+            'height' => ['nullable', 'integer', 'min:1'],
+        ]);
+
+        $oldThumbnail = $post->thumbnail_path;
+
+        $path = $data['thumbnail']->store('thumbnails', 'public');
+
+        $post->update([
+            'thumbnail_path' => $path,
+            'width' => $data['width'] ?? $post->width,
+            'height' => $data['height'] ?? $post->height,
+        ]);
+
+        if ($oldThumbnail && $oldThumbnail !== $post->file_path && $oldThumbnail !== $path) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($oldThumbnail);
+        }
+
+        return response()->json([
+            'thumbnail_url' => \Illuminate\Support\Facades\Storage::disk('public')->url($path),
+        ]);
+    }
+
     protected function resolveSingleTag(string $tagsQuery): ?Tag
     {
         $tokens = collect(explode(' ', trim($tagsQuery)))->filter();

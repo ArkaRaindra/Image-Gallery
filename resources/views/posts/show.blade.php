@@ -127,11 +127,11 @@
                     class="text-white/70 hover:text-white cursor-pointer">×</button>
             </div>
 
-                        <div class="relative rounded p-2 mb-3">
+            <div class="relative rounded p-2 mb-3">
                 @if ($post->isVideo())
                     <video id="post-image"
-                        src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->file_path) }}"
-                        controls class="w-full max-h-[80vh] object-contain rounded mx-auto"></video>
+                        src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->file_path) }}" controls
+                        class="w-full max-h-[80vh] object-contain rounded mx-auto"></video>
                 @else
                     <img id="post-image"
                         src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->file_path) }}"
@@ -151,6 +151,23 @@
                     </button>
                 @endauth
             </div>
+
+            @if ($post->isVideo() && $post->canManageThumbnail(auth()->user()))
+                <div class="mb-4 px-3 py-2.5 bg-white border border-gray-800 rounded text-sm">
+                    <div class="flex items-center justify-between flex-wrap gap-2">
+                        <div>
+                            <span class="font-semibold">Thumbnail:</span>
+                            <span class="text-gray-600">pause the video above where you want, then capture that
+                                frame.</span>
+                        </div>
+                        <button type="button" id="capture-thumbnail-btn"
+                            class="px-3 py-1.5 rounded bg-green-700 hover:bg-green-800 text-white text-xs font-medium cursor-pointer shrink-0">
+                            Use current frame as thumbnail
+                        </button>
+                    </div>
+                    <p id="capture-thumbnail-status" class="text-xs mt-1.5"></p>
+                </div>
+            @endif
 
             <div class="flex items-center justify-between text-sm mb-4 px-2 py-3 bg-white border border-gray-950 rounded">
                 @if ($prevId)
@@ -383,9 +400,8 @@
                                                     data-voted="{{ $replyVoted }}">
                                                     <button type="button" data-comment-vote="up"
                                                         class="{{ $replyVoted === 'up' ? 'text-green-400' : 'hover:text-green-400' }} cursor-pointer">
-                                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                                            viewBox="0 0 24 24" fill="none"
-                                                            stroke="currentColor" stroke-width="2.5"
+                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                                            fill="none" stroke="currentColor" stroke-width="2.5"
                                                             stroke-linecap="round" stroke-linejoin="round"
                                                             class="w-2.5 h-2.5">
                                                             <path d="M12 20V4M5 11l7-7 7 7" />
@@ -394,9 +410,8 @@
                                                     <span data-comment-score>{{ $reply->score }}</span>
                                                     <button type="button" data-comment-vote="down"
                                                         class="{{ $replyVoted === 'down' ? 'text-red-400' : 'hover:text-red-400' }} cursor-pointer">
-                                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                                            viewBox="0 0 24 24" fill="none"
-                                                            stroke="currentColor" stroke-width="2.5"
+                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                                            fill="none" stroke="currentColor" stroke-width="2.5"
                                                             stroke-linecap="round" stroke-linejoin="round"
                                                             class="w-2.5 h-2.5">
                                                             <path d="M12 4v16M5 13l7 7 7-7" />
@@ -409,8 +424,7 @@
                                                         data-comment-id="{{ $reply->id }}">Edit</button>
                                                 @endif
                                                 @if (auth()->user()?->isAdmin())
-                                                    <form method="POST"
-                                                        action="{{ route('comments.destroy', $reply) }}"
+                                                    <form method="POST" action="{{ route('comments.destroy', $reply) }}"
                                                         onsubmit="return confirm('Delete this comment?')" class="inline">
                                                         @csrf
                                                         @method('DELETE')
@@ -512,6 +526,66 @@
             btn?.addEventListener('click', (e) => {
                 e.preventDefault();
                 active ? deactivate() : activate();
+            });
+        })();
+
+        (function() {
+            const captureBtn = document.getElementById('capture-thumbnail-btn');
+            const status = document.getElementById('capture-thumbnail-status');
+            const video = document.getElementById('post-image');
+
+            function setStatus(text, color) {
+                if (!status) return;
+                status.textContent = text;
+                status.className = 'text-xs mt-1.5 ' + color;
+            }
+
+            captureBtn?.addEventListener('click', () => {
+                if (!video || !video.videoWidth) {
+                    setStatus('Play the video above first, then pause on the frame you want.',
+                    'text-amber-700');
+                    return;
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                canvas.toBlob(async (blob) => {
+                    if (!blob) {
+                        setStatus('Could not capture this frame.', 'text-red-700');
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('thumbnail', blob, 'thumbnail.jpg');
+                    formData.append('width', video.videoWidth);
+                    formData.append('height', video.videoHeight);
+
+                    setStatus('Saving thumbnail…', 'text-gray-600');
+                    captureBtn.disabled = true;
+
+                    try {
+                        const res = await fetch('{{ route('posts.thumbnail', $post) }}', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector(
+                                    'meta[name="csrf-token"]').content,
+                                'Accept': 'application/json',
+                            },
+                            body: formData,
+                        });
+
+                        if (!res.ok) throw new Error('Request failed');
+
+                        setStatus('Thumbnail updated!', 'text-green-700');
+                    } catch (e) {
+                        setStatus('Failed to save thumbnail.', 'text-red-700');
+                    } finally {
+                        captureBtn.disabled = false;
+                    }
+                }, 'image/jpeg', 0.85);
             });
         })();
 

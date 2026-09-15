@@ -121,11 +121,13 @@
                             <a href="{{ route('posts.show', $post) }}" class="block rounded overflow-hidden">
                                 <div class="flex items-center justify-center rounded-t overflow-hidden"
                                     style="height: var(--thumb-size);">
-                                    @if ($post->isVideo())
-                                        <video src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail_path) }}"
+                                    @if ($post->thumbnailIsVideo())
+                                        <video
+                                            src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail_path) }}"
                                             class="max-w-full max-h-full object-contain" muted loop playsinline
-                                            preload="metadata"
-                                            onmouseover="this.play()" onmouseout="this.pause(); this.currentTime = 0;"></video>
+                                            preload="metadata" onmouseover="this.play()"
+                                            onmouseout="this.pause(); this.currentTime = 0;"
+                                            onloadedmetadata="this.closest('.group').querySelector('[data-post-dims]').textContent = this.videoWidth + '×' + this.videoHeight;"></video>
                                     @else
                                         <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail_path) }}"
                                             alt="post {{ $post->id }}" loading="lazy"
@@ -165,7 +167,8 @@
                                 <div class="flex items-center gap-2 text-gray-500 mb-2">
                                     <span>{{ strtoupper(substr($post->rating, 0, 1)) }}</span>
                                     <span>{{ $post->humanFileSize() }}</span>
-                                    <span>.{{ $post->file_ext }}, {{ $post->width }}×{{ $post->height }}</span>
+                                    <span>.{{ $post->file_ext }}, <span
+                                            data-post-dims>{{ $post->width }}×{{ $post->height }}</span></span>
                                 </div>
                                 @php
                                     $hoverCategoryOrder = ['artist', 'copyright', 'character', 'general', 'meta'];
