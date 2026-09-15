@@ -50,18 +50,23 @@
             @php $votedDirection = $votedComments[$comment->id] ?? null; @endphp
             <div class="flex gap-4">
                 @if ($comment->post)
-                    <a href="{{ route('posts.show', $comment->post) }}"
-                        class="relative flex items-center justify-center w-[200px] h-[200px] rounded overflow-hidden shrink-0">
-                        @include('partials.duration-badge', ['post' => $comment->post])
-                        @if ($comment->post->thumbnailIsVideo())
-                            <video
-                                src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($comment->post->thumbnail_path) }}"
-                                class="max-w-full max-h-full object-contain" muted loop playsinline preload="metadata"
-                                onmouseover="this.play()" onmouseout="this.pause(); this.currentTime = 0;"></video>
-                        @else
-                            <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($comment->post->thumbnail_path) }}"
-                                alt="post {{ $comment->post->id }}" class="max-w-full max-h-full object-contain">
-                        @endif
+                    <a href="{{ route('posts.show', $comment->post) }}" data-thumb-container
+                        class="relative flex items-center justify-center w-[200px] h-[200px] rounded overflow-hidden shrink-0 cursor-default">
+                        <div class="absolute inset-0" data-thumb-fit>
+                            @include('partials.duration-badge', ['post' => $comment->post])
+                            @if ($comment->post->thumbnailIsVideo())
+                                <video data-thumb-media
+                                    src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($comment->post->thumbnail_path) }}"
+                                    class="block w-full h-full object-contain cursor-pointer" muted loop playsinline
+                                    preload="metadata" onmouseover="this.play()"
+                                    onmouseout="this.pause(); this.currentTime = 0;"></video>
+                            @else
+                                <img data-thumb-media
+                                    src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($comment->post->thumbnail_path) }}"
+                                    alt="post {{ $comment->post->id }}"
+                                    class="block w-full h-full object-contain cursor-pointer">
+                            @endif
+                        </div>
                     </a>
                 @endif
                 <div class="flex-1 min-w-0">

@@ -118,22 +118,26 @@
                     @forelse ($posts as $post)
                         @php $votedDirection = $votedPosts[$post->id] ?? null; @endphp
                         <div class="relative group">
-                            <a href="{{ route('posts.show', $post) }}" class="block rounded overflow-hidden">
+                            <a href="{{ route('posts.show', $post) }}"
+                                class="block rounded overflow-hidden cursor-default">
                                 <div class="relative flex items-center justify-center rounded-t overflow-hidden"
-                                    style="height: var(--thumb-size);">
-                                    @include('partials.duration-badge', ['post' => $post])
-                                    @if ($post->thumbnailIsVideo())
-                                        <video
-                                            src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail_path) }}"
-                                            class="max-w-full max-h-full object-contain" muted loop playsinline
-                                            preload="metadata" onmouseover="this.play()"
-                                            onmouseout="this.pause(); this.currentTime = 0;"
-                                            onloadedmetadata="this.closest('.group').querySelector('[data-post-dims]').textContent = this.videoWidth + '×' + this.videoHeight;"></video>
-                                    @else
-                                        <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail_path) }}"
-                                            alt="post {{ $post->id }}" loading="lazy"
-                                            class="max-w-full max-h-full object-contain">
-                                    @endif
+                                    data-thumb-container style="height: var(--thumb-size);">
+                                    <div class="absolute inset-0" data-thumb-fit>
+                                        @include('partials.duration-badge', ['post' => $post])
+                                        @if ($post->thumbnailIsVideo())
+                                            <video data-thumb-media
+                                                src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail_path) }}"
+                                                class="block w-full h-full object-contain cursor-pointer" muted loop
+                                                playsinline preload="metadata" onmouseover="this.play()"
+                                                onmouseout="this.pause(); this.currentTime = 0;"
+                                                onloadedmetadata="this.closest('.group').querySelector('[data-post-dims]').textContent = this.videoWidth + '×' + this.videoHeight;"></video>
+                                        @else
+                                            <img data-thumb-media
+                                                src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail_path) }}"
+                                                alt="post {{ $post->id }}" loading="lazy"
+                                                class="block w-full h-full object-contain cursor-pointer">
+                                        @endif
+                                    </div>
                                 </div>
                                 <div class="flex items-center justify-center gap-1.5 text-xs text-gray-500 py-1"
                                     data-vote-widget data-post-id="{{ $post->id }}"
@@ -158,8 +162,8 @@
                                 </div>
                             </a>
 
-                            <div
-                                class="absolute z-30 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-100 delay-200 group-hover:delay-75 bottom-full left-0 mb-1 w-72 bg-gray-900/95 border border-gray-700 rounded shadow-xl p-2 text-xs">
+                            <div data-hover-panel style="bottom: 100%;"
+                                class="absolute z-30 opacity-0 invisible transition-all duration-100 delay-200 left-0 w-72 bg-gray-900/95 border border-gray-700 rounded shadow-xl p-2 text-xs">
                                 <div class="flex items-center justify-between text-gray-300 mb-1">
                                     <span class="font-medium truncate">{{ $post->uploader?->name ?? 'Admin' }}</span>
                                     <span
@@ -215,6 +219,7 @@
     <script>
         document.getElementById('thumb-size')?.addEventListener('change', function(e) {
             document.getElementById('thumb-grid').style.setProperty('--thumb-size', e.target.value + 'px');
+            window.recomputeThumbFits?.();
         });
 
         (function() {

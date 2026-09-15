@@ -485,3 +485,102 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+document.addEventListener('click', (e) => {
+    const editBtn = e.target.closest('.edit-toggle-btn');
+    if (editBtn) {
+        const form = document.querySelector(`.edit-form[data-comment-id="${editBtn.dataset.commentId}"]`);
+        form?.classList.toggle('hidden');
+        return;
+    }
+
+    const cancelBtn = e.target.closest('.cancel-edit-btn');
+    if (cancelBtn) {
+        cancelBtn.closest('.edit-form')?.classList.add('hidden');
+    }
+});
+
+const THUMB_HOVER_PANEL_GAP = 4;
+
+function applyThumbFit(container) {
+    const fit = container.querySelector('[data-thumb-fit]');
+    const media = container.querySelector('[data-thumb-media]');
+    if (!fit || !media) return;
+
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+    const naturalWidth = media.tagName === 'VIDEO' ? media.videoWidth : media.naturalWidth;
+    const naturalHeight = media.tagName === 'VIDEO' ? media.videoHeight : media.naturalHeight;
+
+    if (!containerWidth || !containerHeight || !naturalWidth || !naturalHeight) return;
+
+    const scale = Math.min(containerWidth / naturalWidth, containerHeight / naturalHeight);
+    const width = Math.max(1, Math.round(naturalWidth * scale));
+    const height = Math.max(1, Math.round(naturalHeight * scale));
+    const top = Math.round((containerHeight - height) / 2);
+
+    fit.style.width = width + 'px';
+    fit.style.height = height + 'px';
+    fit.style.left = Math.round((containerWidth - width) / 2) + 'px';
+    fit.style.top = top + 'px';
+
+    const group = container.closest('.group');
+    const panel = group?.querySelector('[data-hover-panel]');
+    if (panel) {
+        panel.style.bottom = (group.offsetHeight - top + THUMB_HOVER_PANEL_GAP) + 'px';
+    }
+}
+
+function setupThumbFit(container) {
+    const media = container.querySelector('[data-thumb-media]');
+    if (!media) return;
+
+    const run = () => applyThumbFit(container);
+
+    if (media.tagName === 'VIDEO') {
+        if (media.readyState >= 1 && media.videoWidth) run();
+        media.addEventListener('loadedmetadata', run, { once: true });
+    } else {
+        if (media.complete && media.naturalWidth) run();
+        media.addEventListener('load', run, { once: true });
+    }
+}
+
+// Empty (letterboxed) space inside the thumbnail box shouldn't navigate to
+// the post — only clicks landing on the actual rendered picture should.
+function bindThumbEmptyClickGuard(container) {
+    container.addEventListener('click', (e) => {
+        if (!e.target.closest('[data-thumb-fit]')) {
+            e.preventDefault();
+        }
+    });
+}
+
+function bindThumbHoverPanel(fit) {
+    const panel = fit.closest('.group')?.querySelector('[data-hover-panel]');
+    if (!panel) return;
+
+    fit.addEventListener('mouseenter', () => {
+        panel.classList.remove('opacity-0', 'invisible', 'delay-200');
+        panel.classList.add('opacity-100', 'visible', 'delay-75');
+    });
+
+    fit.addEventListener('mouseleave', () => {
+        panel.classList.add('opacity-0', 'invisible', 'delay-200');
+        panel.classList.remove('opacity-100', 'visible', 'delay-75');
+    });
+}
+
+window.recomputeThumbFits = function () {
+    document.querySelectorAll('[data-thumb-container]').forEach(applyThumbFit);
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-thumb-container]').forEach((container) => {
+        setupThumbFit(container);
+        bindThumbEmptyClickGuard(container);
+    });
+    document.querySelectorAll('[data-thumb-fit]').forEach(bindThumbHoverPanel);
+});
+
+window.addEventListener('resize', debounce(() => window.recomputeThumbFits(), 150));
