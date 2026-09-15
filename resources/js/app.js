@@ -415,3 +415,73 @@ document.addEventListener('click', (e) => {
         cancelBtn.closest('.edit-form')?.classList.add('hidden');
     }
 });
+
+function formatDuration(totalSeconds) {
+    if (!isFinite(totalSeconds) || totalSeconds < 0) return null;
+
+    const rounded = Math.round(totalSeconds);
+    const minutes = Math.floor(rounded / 60);
+    const seconds = rounded % 60;
+
+    return `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
+
+function revealDurationBadge(el, text) {
+    const label = el.querySelector('[data-duration-text]');
+    if (label) label.textContent = text;
+    el.classList.remove('hidden');
+    el.classList.add('flex');
+}
+
+function loadVideoDuration(el) {
+    const probe = document.createElement('video');
+    probe.preload = 'metadata';
+    probe.muted = true;
+    probe.src = el.dataset.src;
+
+    probe.addEventListener('loadedmetadata', () => {
+        const text = formatDuration(probe.duration);
+        if (text) revealDurationBadge(el, text);
+    }, { once: true });
+}
+
+function parseGifFrameDelays(buffer) {
+    const bytes = new Uint8Array(buffer);
+    const delays = [];
+
+    for (let i = 0; i < bytes.length - 8; i++) {
+        // Graphic Control Extension block: 0x21 0xF9 0x04 <flags> <delayLo> <delayHi> ...
+        if (bytes[i] === 0x21 && bytes[i + 1] === 0xf9 && bytes[i + 2] === 0x04) {
+            const raw = bytes[i + 4] | (bytes[i + 5] << 8);
+            delays.push(raw < 2 ? 10 : raw); // delays under 20ms render as ~100ms in browsers
+        }
+    }
+
+    return delays;
+}
+
+async function loadGifDuration(el) {
+    try {
+        const res = await fetch(el.dataset.src);
+        const buffer = await res.arrayBuffer();
+        const delays = parseGifFrameDelays(buffer);
+
+        if (!delays.length) return;
+
+        const totalSeconds = delays.reduce((sum, d) => sum + d, 0) / 100;
+        const text = formatDuration(totalSeconds);
+        if (text) revealDurationBadge(el, text);
+    } catch (err) {
+        // Leave the badge hidden if the gif can't be fetched/parsed.
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-duration-badge]').forEach((el) => {
+        if (el.dataset.kind === 'video') {
+            loadVideoDuration(el);
+        } else if (el.dataset.kind === 'gif') {
+            loadGifDuration(el);
+        }
+    });
+});

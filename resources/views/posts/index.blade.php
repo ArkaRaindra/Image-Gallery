@@ -119,8 +119,9 @@
                         @php $votedDirection = $votedPosts[$post->id] ?? null; @endphp
                         <div class="relative group">
                             <a href="{{ route('posts.show', $post) }}" class="block rounded overflow-hidden">
-                                <div class="flex items-center justify-center rounded-t overflow-hidden"
+                                <div class="relative flex items-center justify-center rounded-t overflow-hidden"
                                     style="height: var(--thumb-size);">
+                                    @include('partials.duration-badge', ['post' => $post])
                                     @if ($post->thumbnailIsVideo())
                                         <video
                                             src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail_path) }}"

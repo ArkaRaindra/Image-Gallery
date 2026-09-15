@@ -32,22 +32,70 @@
     <h2 class="font-semibold mb-2">Statistics</h2>
     <table class="text-sm mb-8">
         <tbody>
-            <tr><td class="pr-6 py-0.5 text-gray-600">User ID</td><td>{{ $user->id }}</td></tr>
-            <tr><td class="pr-6 py-0.5 text-gray-600">Join Date</td><td>{{ $user->created_at->format('Y-m-d') }}</td></tr>
-            <tr><td class="pr-6 py-0.5 text-gray-600">Email Address</td><td>{{ $user->email }}</td></tr>
-                        <tr><td class="pr-6 py-0.5 text-gray-600">Level</td><td>{{ ucfirst($user->role) }}</td></tr>
-            <tr><td class="pr-6 py-0.5 text-gray-600">Posts</td><td>{{ $stats['posts'] }}</td></tr>
-            <tr><td class="pr-6 py-0.5 text-gray-600">Deleted Posts</td><td>0</td></tr>
-            <tr><td class="pr-6 py-0.5 text-gray-600">Favorites</td><td>{{ $stats['favorites'] }}</td></tr>
-            <tr><td class="pr-6 py-0.5 text-gray-600">Favorite Groups</td><td>0</td></tr>
-            <tr><td class="pr-6 py-0.5 text-gray-600">Post Changes</td><td>0</td></tr>
-            <tr><td class="pr-6 py-0.5 text-gray-600">Wiki Page Changes</td><td>0</td></tr>
-            <tr><td class="pr-6 py-0.5 text-gray-600">Artist Changes</td><td>0</td></tr>
-            <tr><td class="pr-6 py-0.5 text-gray-600">Pool Changes</td><td>0</td></tr>
-            <tr><td class="pr-6 py-0.5 text-gray-600">Forum Posts</td><td>0</td></tr>
-            <tr><td class="pr-6 py-0.5 text-gray-600">Comments</td><td>{{ $stats['comments'] }}</td></tr>
-            <tr><td class="pr-6 py-0.5 text-gray-600">Appeals</td><td>0</td></tr>
-            <tr><td class="pr-6 py-0.5 text-gray-600">Flags</td><td>0</td></tr>
+            <tr>
+                <td class="pr-6 py-0.5 text-gray-600">User ID</td>
+                <td>{{ $user->id }}</td>
+            </tr>
+            <tr>
+                <td class="pr-6 py-0.5 text-gray-600">Join Date</td>
+                <td>{{ $user->created_at->format('Y-m-d') }}</td>
+            </tr>
+            <tr>
+                <td class="pr-6 py-0.5 text-gray-600">Email Address</td>
+                <td>{{ $user->email }}</td>
+            </tr>
+            <tr>
+                <td class="pr-6 py-0.5 text-gray-600">Level</td>
+                <td>{{ ucfirst($user->role) }}</td>
+            </tr>
+            <tr>
+                <td class="pr-6 py-0.5 text-gray-600">Posts</td>
+                <td>{{ $stats['posts'] }}</td>
+            </tr>
+            <tr>
+                <td class="pr-6 py-0.5 text-gray-600">Deleted Posts</td>
+                <td>0</td>
+            </tr>
+            <tr>
+                <td class="pr-6 py-0.5 text-gray-600">Favorites</td>
+                <td>{{ $stats['favorites'] }}</td>
+            </tr>
+            <tr>
+                <td class="pr-6 py-0.5 text-gray-600">Favorite Groups</td>
+                <td>0</td>
+            </tr>
+            <tr>
+                <td class="pr-6 py-0.5 text-gray-600">Post Changes</td>
+                <td>0</td>
+            </tr>
+            <tr>
+                <td class="pr-6 py-0.5 text-gray-600">Wiki Page Changes</td>
+                <td>0</td>
+            </tr>
+            <tr>
+                <td class="pr-6 py-0.5 text-gray-600">Artist Changes</td>
+                <td>0</td>
+            </tr>
+            <tr>
+                <td class="pr-6 py-0.5 text-gray-600">Pool Changes</td>
+                <td>0</td>
+            </tr>
+            <tr>
+                <td class="pr-6 py-0.5 text-gray-600">Forum Posts</td>
+                <td>0</td>
+            </tr>
+            <tr>
+                <td class="pr-6 py-0.5 text-gray-600">Comments</td>
+                <td>{{ $stats['comments'] }}</td>
+            </tr>
+            <tr>
+                <td class="pr-6 py-0.5 text-gray-600">Appeals</td>
+                <td>0</td>
+            </tr>
+            <tr>
+                <td class="pr-6 py-0.5 text-gray-600">Flags</td>
+                <td>0</td>
+            </tr>
         </tbody>
     </table>
 
@@ -58,9 +106,16 @@
         </div>
         <div class="flex flex-wrap gap-2">
             @forelse ($recentFavorites as $post)
-                <a href="{{ route('posts.show', $post) }}" class="block w-24 h-24 rounded overflow-hidden">
-                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail_path) }}"
-                        alt="post {{ $post->id }}" class="w-full h-full object-cover">
+                <a href="{{ route('posts.show', $post) }}" class="relative block w-24 h-24 rounded overflow-hidden">
+                    @include('partials.duration-badge', ['post' => $post])
+                    @if ($post->thumbnailIsVideo())
+                        <video src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail_path) }}"
+                            class="w-full h-full object-cover" muted loop playsinline preload="metadata"
+                            onmouseover="this.play()" onmouseout="this.pause(); this.currentTime = 0;"></video>
+                    @else
+                        <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail_path) }}"
+                            alt="post {{ $post->id }}" class="w-full h-full object-cover">
+                    @endif
                 </a>
             @empty
                 <p class="text-sm text-gray-500">No favorites yet.</p>
@@ -75,9 +130,16 @@
         </div>
         <div class="flex flex-wrap gap-2">
             @forelse ($recentPosts as $post)
-                <a href="{{ route('posts.show', $post) }}" class="block w-24 h-24 rounded overflow-hidden">
-                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail_path) }}"
-                        alt="post {{ $post->id }}" class="w-full h-full object-cover">
+                <a href="{{ route('posts.show', $post) }}" class="relative block w-24 h-24 rounded overflow-hidden">
+                    @include('partials.duration-badge', ['post' => $post])
+                    @if ($post->thumbnailIsVideo())
+                        <video src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail_path) }}"
+                            class="w-full h-full object-cover" muted loop playsinline preload="metadata"
+                            onmouseover="this.play()" onmouseout="this.pause(); this.currentTime = 0;"></video>
+                    @else
+                        <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail_path) }}"
+                            alt="post {{ $post->id }}" class="w-full h-full object-cover">
+                    @endif
                 </a>
             @empty
                 <p class="text-sm text-gray-500">You haven't uploaded any posts yet.</p>

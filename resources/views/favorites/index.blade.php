@@ -8,7 +8,8 @@
     <div class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr));">
         @forelse ($posts as $post)
             <a href="{{ route('posts.show', $post) }}" class="block rounded overflow-hidden">
-                <div class="flex items-center justify-center rounded overflow-hidden" style="width: 200px; height: 200px;">
+                <div class="relative flex items-center justify-center rounded overflow-hidden" style="width: 200px; height: 200px;">
+                    @include('partials.duration-badge', ['post' => $post])
                     @if ($post->thumbnailIsVideo())
                         <video src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail_path) }}"
                             class="max-w-full max-h-full object-contain" muted loop playsinline preload="metadata"

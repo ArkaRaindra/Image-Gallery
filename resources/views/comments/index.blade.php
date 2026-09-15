@@ -51,7 +51,8 @@
             <div class="flex gap-4">
                 @if ($comment->post)
                     <a href="{{ route('posts.show', $comment->post) }}"
-                        class="flex items-center justify-center w-[200px] h-[200px] rounded overflow-hidden shrink-0">
+                        class="relative flex items-center justify-center w-[200px] h-[200px] rounded overflow-hidden shrink-0">
+                        @include('partials.duration-badge', ['post' => $comment->post])
                         @if ($comment->post->thumbnailIsVideo())
                             <video
                                 src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($comment->post->thumbnail_path) }}"
