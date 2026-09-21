@@ -842,7 +842,7 @@ function initPostNotes() {
                 <button type="button" data-close class="text-gray-400 hover:text-white cursor-pointer shrink-0">×</button>
             </div>
             <textarea data-textarea class="w-full h-28 px-2 py-1.5 rounded border border-sky-500 bg-white text-gray-900 text-xs resize-y" spellcheck="false"></textarea>
-            <div data-preview class="hidden w-full min-h-28 px-2 py-1.5 rounded border border-gray-600 bg-white text-gray-900 text-xs overflow-auto"></div>
+            <div data-preview class="hidden w-full min-h-28 px-2 py-1.5 rounded border border-gray-600 text-gray-900 text-xs overflow-auto"></div>
             <div class="flex flex-wrap gap-1.5 mt-2">
                 <button type="button" data-save class="px-2 py-1 rounded bg-green-700 hover:bg-green-800 text-white cursor-pointer">Save</button>
                 <button type="button" data-preview-btn class="px-2 py-1 rounded bg-gray-700 hover:bg-gray-600 text-white cursor-pointer">Preview</button>

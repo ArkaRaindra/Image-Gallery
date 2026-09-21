@@ -9,14 +9,25 @@ use DOMText;
 
 class NoteFormatter
 {
-    protected const ALLOWED_TAGS = [
-        'b', 'i', 's', 'u', 'big', 'small', 'code', 'h1', 'tn',
-        'span', 'div', 'a', 'ruby', 'rb', 'rt', 'ul', 'ol', 'li', 'br', 'p',
-    ];
+    // Empty array = allow all HTML tags (except those in DROP_ENTIRELY).
+    // Populate this list to restrict to a specific allowlist.
+    protected const ALLOWED_TAGS = [];
 
     protected const DROP_ENTIRELY = [
         'script', 'style', 'iframe', 'object', 'embed', 'link', 'meta',
         'form', 'input', 'textarea', 'button', 'svg', 'math',
+    ];
+
+    protected const BLOCKED_ATTRIBUTES = [
+        'onload', 'onunload', 'onerror', 'onclick', 'ondblclick', 'onmousedown', 'onmouseup',
+        'onmouseover', 'onmouseout', 'onmousemove', 'onmouseenter', 'onmouseleave',
+        'onkeydown', 'onkeypress', 'onkeyup', 'onfocus', 'onblur', 'onsubmit', 'onreset',
+        'onchange', 'oninput', 'onselect', 'onresize', 'onscroll', 'oncontextmenu',
+        'onabort', 'oncanplay', 'oncanplaythrough', 'ondurationchange', 'onemptied',
+        'onended', 'onloadeddata', 'onloadedmetadata', 'onloadstart', 'onpause', 'onplay',
+        'onplaying', 'onprogress', 'onratechange', 'onseeked', 'onseeking', 'onstalled',
+        'onsuspend', 'ontimeupdate', 'onvolumechange', 'onwaiting', 'onwheel',
+        'formaction', 'xlink:href', 'data', 'srcdoc',
     ];
 
     protected const ALLOWED_STYLE_PROPERTIES = [
@@ -94,7 +105,7 @@ class NoteFormatter
                 continue;
             }
 
-            if (! in_array($tag, static::ALLOWED_TAGS, true)) {
+            if (static::ALLOWED_TAGS !== [] && ! in_array($tag, static::ALLOWED_TAGS, true)) {
                 while ($child->firstChild) {
                     $node->insertBefore($child->firstChild, $child);
                 }
@@ -128,7 +139,15 @@ class NoteFormatter
                 continue;
             }
 
-            $toRemove[] = $attr->name;
+            if (in_array($name, static::BLOCKED_ATTRIBUTES, true)) {
+                $toRemove[] = $attr->name;
+                continue;
+            }
+
+            if (str_starts_with($name, 'on')) {
+                $toRemove[] = $attr->name;
+                continue;
+            }
         }
 
         foreach ($toRemove as $name) {

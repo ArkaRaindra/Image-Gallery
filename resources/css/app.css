@@ -9,3 +9,109 @@
 
     --color-gallery-green: #9AE598;
 }
+
+/* Note tooltip typography: ensure all HTML tags render with sensible
+   sizes inside the small hover popup (which defaults to text-xs). */
+[data-note-tooltip] {
+    font-size: 0.75rem !important;
+    line-height: 1.25rem !important;
+}
+
+[data-note-tooltip] h1 {
+    font-size: 1.25rem !important;
+    font-weight: 700 !important;
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.25rem !important;
+}
+
+[data-note-tooltip] h2 {
+    font-size: 1.125rem !important;
+    font-weight: 700 !important;
+    margin-top: 0.4375rem !important;
+    margin-bottom: 0.21875rem !important;
+}
+
+[data-note-tooltip] h3 {
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+    margin-top: 0.375rem !important;
+    margin-bottom: 0.1875rem !important;
+}
+
+[data-note-tooltip] h4 {
+    font-size: 0.9375rem !important;
+    font-weight: 700 !important;
+    margin-top: 0.3125rem !important;
+    margin-bottom: 0.15625rem !important;
+}
+
+[data-note-tooltip] h5 {
+    font-size: 0.875rem !important;
+    font-weight: 700 !important;
+    margin-top: 0.25rem !important;
+    margin-bottom: 0.125rem !important;
+}
+
+[data-note-tooltip] h6 {
+    font-size: 0.8125rem !important;
+    font-weight: 700 !important;
+    margin-top: 0.1875rem !important;
+    margin-bottom: 0.09375rem !important;
+}
+
+[data-note-tooltip] p {
+    margin: 0.125rem 0 !important;
+}
+
+[data-note-tooltip] ul,
+[data-note-tooltip] ol {
+    margin: 0.125rem 0 !important;
+    padding-left: 1rem !important;
+}
+
+[data-note-tooltip] li {
+    margin: 0 !important;
+}
+
+[data-note-tooltip] a {
+    color: #0284c7 !important;
+    text-decoration: underline !important;
+}
+
+[data-note-tooltip] a:hover {
+    color: #0369a1 !important;
+}
+
+[data-note-tooltip] b,
+[data-note-tooltip] strong {
+    font-weight: 700 !important;
+}
+
+[data-note-tooltip] i,
+[data-note-tooltip] em {
+    font-style: italic !important;
+}
+
+[data-note-tooltip] u {
+    text-decoration: underline !important;
+}
+
+[data-note-tooltip] s,
+[data-note-tooltip] strike,
+[data-note-tooltip] del {
+    text-decoration: line-through !important;
+}
+
+[data-note-tooltip] code {
+    background-color: #e5e7eb !important;
+    color: #1f2937 !important;
+    padding: 0 0.125rem !important;
+    border-radius: 0.125rem !important;
+    font-size: 0.7rem !important;
+}
+
+[data-note-tooltip] br {
+    display: block !important;
+    content: '' !important;
+    margin-top: 0.125rem !important;
+}
