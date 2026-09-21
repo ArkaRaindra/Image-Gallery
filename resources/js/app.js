@@ -601,9 +601,9 @@ window.addEventListener('resize', debounce(() => window.recomputeThumbFits(), 15
 // --- Post translation notes -------------------------------------------------
 // Notes are rectangles (stored as % of the image) overlaid on a post's image,
 // following the formatting rules at https://danbooru.donmai.us/wiki_pages/help:notes.
-// Their rendered content is always visible (sanitized server-side before it's
-// ever sent to the browser). Any viewer can drag a note to reposition it, but
-// that's purely visual/in-memory — nothing is saved, so it resets on refresh.
+// The note itself stays empty; its translation only appears in a hover popup
+// underneath it. Any viewer can drag a note to reposition it, but that's
+// purely visual/in-memory — nothing is saved, so it resets on refresh.
 // Only the post's uploader or an admin can add/edit/delete notes.
 
 function stripTags(html) {
@@ -650,32 +650,98 @@ function initPostNotes() {
         layer.classList.remove('hidden');
     }
 
+    // Border color state machine: clicking always turns the border blue while
+    // the note is being dragged. When the drag ends, the border becomes
+    // black if the note is back on its original (server) position, or red
+    // if it was moved away. Clicking again starts a new drag, turning it
+    // blue once more, and the cycle repeats based on the final position.
+    const NOTE_BORDER_CLASSES = ['border-black', 'border-blue-500', 'border-red-500'];
+
+    function setNoteBorder(box, color) {
+        box.classList.remove(...NOTE_BORDER_CLASSES);
+        box.classList.add(color);
+    }
+
     function closeAnyOpenDialog() {
         layer.querySelectorAll('[data-note-dialog]').forEach((el) => el.remove());
     }
 
     function renderNoteContent(box, note) {
-        const content = box.querySelector('[data-note-content]');
-        if (content) content.innerHTML = note.body || '';
+        const tooltip = box.querySelector('[data-note-tooltip]');
+        if (!tooltip) return;
 
-        const label = box.querySelector('[data-note-edit-label]');
-        if (label) {
-            const preview = stripTags(note.body).trim();
-            label.textContent = preview ? preview.slice(0, 60) : 'Click to edit';
-        }
+        const hasBody = stripTags(note.body).trim() !== '';
+        tooltip.innerHTML = hasBody ? note.body : 'Click to edit';
     }
 
     // Purely client-side drag: updates the box's on-screen position only.
     // Nothing is persisted, so it reverts to the server position on reload.
-    function bindDrag(box) {
+    function bindDrag(box, note) {
         let dragging = false;
         let startX = 0;
         let startY = 0;
         let startLeft = 0;
         let startTop = 0;
 
+        function originalPixelPosition() {
+            return {
+                left: (note.x / 100) * layer.clientWidth,
+                top: (note.y / 100) * layer.clientHeight,
+            };
+        }
+
+        function isPositionChanged() {
+            const currentLeft = parseFloat(box.style.left);
+            const currentTop = parseFloat(box.style.top);
+            const original = originalPixelPosition();
+            return Math.abs(currentLeft - original.left) > 2 || Math.abs(currentTop - original.top) > 2;
+        }
+
+        function onDragMove(e) {
+            if (!dragging) return;
+
+            const maxLeft = Math.max(0, layer.clientWidth - box.offsetWidth);
+            const maxTop = Math.max(0, layer.clientHeight - box.offsetHeight);
+            const newLeft = Math.min(Math.max(0, startLeft + (e.clientX - startX)), maxLeft);
+            const newTop = Math.min(Math.max(0, startTop + (e.clientY - startY)), maxTop);
+
+            box.style.left = newLeft + 'px';
+            box.style.top = newTop + 'px';
+        }
+
+        function onDragEnd() {
+            if (!dragging) return;
+            dragging = false;
+        }
+
         box.addEventListener('mousedown', (e) => {
+            if (e.target.closest('[data-note-tooltip]')) return;
+
+            // Toggle border color based on current position state:
+            // - If position unchanged: toggle between black and blue
+            // - If position changed: toggle between red and blue
+            if (isPositionChanged()) {
+                // Toggle red <-> blue
+                if (box.dataset.borderState === 'blue') {
+                    box.dataset.borderState = 'red';
+                    setNoteBorder(box, 'border-red-500');
+                } else {
+                    box.dataset.borderState = 'blue';
+                    setNoteBorder(box, 'border-blue-500');
+                }
+            } else {
+                // Toggle black <-> blue
+                if (box.dataset.borderState === 'blue') {
+                    box.dataset.borderState = 'black';
+                    setNoteBorder(box, 'border-black');
+                } else {
+                    box.dataset.borderState = 'blue';
+                    setNoteBorder(box, 'border-blue-500');
+                }
+            }
+
             dragging = true;
+
             const rect = box.getBoundingClientRect();
             const layerRect = layer.getBoundingClientRect();
             startX = e.clientX;
@@ -687,23 +753,10 @@ function initPostNotes() {
             box.style.left = startLeft + 'px';
             box.style.top = startTop + 'px';
 
+            document.addEventListener('mousemove', onDragMove, { passive: true });
+            document.addEventListener('mouseup', onDragEnd, { once: true });
+
             e.preventDefault();
-        });
-
-        document.addEventListener('mousemove', (e) => {
-            if (!dragging) return;
-
-            const maxLeft = Math.max(0, layer.clientWidth - box.offsetWidth);
-            const maxTop = Math.max(0, layer.clientHeight - box.offsetHeight);
-            const newLeft = Math.min(Math.max(0, startLeft + (e.clientX - startX)), maxLeft);
-            const newTop = Math.min(Math.max(0, startTop + (e.clientY - startY)), maxTop);
-
-            box.style.left = newLeft + 'px';
-            box.style.top = newTop + 'px';
-        });
-
-        document.addEventListener('mouseup', () => {
-            dragging = false;
         });
     }
 
@@ -711,33 +764,39 @@ function initPostNotes() {
         const box = document.createElement('div');
         box.dataset.noteBox = '';
         box.dataset.noteId = note.id;
-        box.className = 'absolute border border-yellow-400/70 hover:border-yellow-300 group/note cursor-move';
+        box.dataset.borderState = 'black';
+        box.className = 'absolute border-2 border-black group/note cursor-move';
+        box.style.backgroundImage = 'repeating-linear-gradient(45deg, rgba(0,0,0,0.06), rgba(0,0,0,0.06) 4px, transparent 4px, transparent 8px)';
         box.style.left = note.x + '%';
         box.style.top = note.y + '%';
         box.style.width = note.width + '%';
         box.style.height = note.height + '%';
 
-        const content = document.createElement('div');
-        content.dataset.noteContent = '';
-        content.className = 'w-full h-full overflow-hidden text-xs leading-tight';
-        content.innerHTML = note.body || '';
-        box.appendChild(content);
+        const hasBody = stripTags(note.body).trim() !== '';
 
-        if (canManage) {
-            const label = document.createElement('div');
-            label.dataset.noteEditLabel = '';
-            label.className = 'hidden group-hover/note:block absolute z-40 left-0 top-full mt-0.5 max-w-[16rem] truncate bg-white text-gray-900 text-[11px] px-1.5 py-0.5 rounded shadow border border-gray-400 cursor-pointer';
-            const preview = stripTags(note.body).trim();
-            label.textContent = preview ? preview.slice(0, 60) : 'Click to edit';
-            label.addEventListener('mousedown', (e) => e.stopPropagation());
-            label.addEventListener('click', (e) => {
-                e.stopPropagation();
-                openEditDialog(note, box);
-            });
-            box.appendChild(label);
+        // The note itself stays empty — its translation only shows in a
+        // popup underneath when hovered. Viewers only get this popup when
+        // there's actually something to read; editors also get it empty
+        // (as "Click to edit") so they have something to click.
+        if (canManage || hasBody) {
+            const tooltip = document.createElement('div');
+            tooltip.dataset.noteTooltip = '';
+            tooltip.className = 'hidden group-hover/note:block absolute z-40 left-0 top-full mt-1 min-w-[8rem] max-w-xs bg-white text-gray-900 text-xs rounded shadow border border-gray-400 px-2 py-1 leading-tight'
+                + (canManage ? ' cursor-pointer' : '');
+            tooltip.innerHTML = hasBody ? note.body : 'Click to edit';
+
+            if (canManage) {
+                tooltip.addEventListener('mousedown', (e) => e.stopPropagation());
+                tooltip.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openEditDialog(note, box);
+                });
+            }
+
+            box.appendChild(tooltip);
         }
 
-        bindDrag(box);
+        bindDrag(box, note);
         return box;
     }
 
@@ -789,7 +848,7 @@ function initPostNotes() {
                 <button type="button" data-preview-btn class="px-2 py-1 rounded bg-gray-700 hover:bg-gray-600 text-white cursor-pointer">Preview</button>
                 <button type="button" data-cancel class="px-2 py-1 rounded bg-gray-700 hover:bg-gray-600 text-white cursor-pointer">Cancel</button>
                 <button type="button" data-delete class="px-2 py-1 rounded bg-red-800 hover:bg-red-900 text-white cursor-pointer">Delete</button>
-                <a href="/notes/${note.id}/history" data-history class="px-2 py-1 rounded bg-gray-700 hover:bg-gray-600 text-white cursor-pointer inline-block">History</a>
+                <a href="/notes/${note.id}/history" target="_blank" rel="noopener" data-history class="px-2 py-1 rounded bg-gray-700 hover:bg-gray-600 text-white cursor-pointer inline-block">History</a>
             </div>
         `;
 
@@ -863,6 +922,13 @@ function initPostNotes() {
                     const data = await res.json();
                     Object.assign(note, data.note);
                     renderNoteContent(box, note);
+                    // Reset position and border state to server values after save
+                    box.style.left = note.x + '%';
+                    box.style.top = note.y + '%';
+                    box.style.width = note.width + '%';
+                    box.style.height = note.height + '%';
+                    box.dataset.borderState = 'black';
+                    setNoteBorder(box, 'border-black');
                 }
             } finally {
                 closeDialog();

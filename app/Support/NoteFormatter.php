@@ -26,6 +26,8 @@ class NoteFormatter
         'border-bottom-style', 'border-bottom-width',
         'border-left', 'border-left-color', 'border-left-style', 'border-left-width',
         'border-right', 'border-right-color', 'border-right-style', 'border-right-width',
+        'border-top', 'border-top-color', 'border-top-left-radius', 'border-top-right-radius',
+        'border-top-style', 'border-top-width',
         'bottom', 'left', 'right', 'top',
         'box-shadow', 'display', 'filter', 'float',
         'font', 'font-family', 'font-size', 'font-size-adjust', 'font-style', 'font-variant', 'font-weight',
