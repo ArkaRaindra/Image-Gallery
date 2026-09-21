@@ -502,6 +502,22 @@ document.addEventListener('click', (e) => {
 
 const THUMB_HOVER_PANEL_GAP = 4;
 
+// Computes the "object-fit: contain" box of a naturalWidth x naturalHeight
+// media element inside a containerWidth x containerHeight box: the box's
+// pixel width/height and its centered top/left offset.
+function computeContainFit(containerWidth, containerHeight, naturalWidth, naturalHeight) {
+    const scale = Math.min(containerWidth / naturalWidth, containerHeight / naturalHeight);
+    const width = Math.max(1, Math.round(naturalWidth * scale));
+    const height = Math.max(1, Math.round(naturalHeight * scale));
+
+    return {
+        width,
+        height,
+        left: Math.round((containerWidth - width) / 2),
+        top: Math.round((containerHeight - height) / 2),
+    };
+}
+
 function applyThumbFit(container) {
     const fit = container.querySelector('[data-thumb-fit]');
     const media = container.querySelector('[data-thumb-media]');
@@ -514,20 +530,17 @@ function applyThumbFit(container) {
 
     if (!containerWidth || !containerHeight || !naturalWidth || !naturalHeight) return;
 
-    const scale = Math.min(containerWidth / naturalWidth, containerHeight / naturalHeight);
-    const width = Math.max(1, Math.round(naturalWidth * scale));
-    const height = Math.max(1, Math.round(naturalHeight * scale));
-    const top = Math.round((containerHeight - height) / 2);
+    const box = computeContainFit(containerWidth, containerHeight, naturalWidth, naturalHeight);
 
-    fit.style.width = width + 'px';
-    fit.style.height = height + 'px';
-    fit.style.left = Math.round((containerWidth - width) / 2) + 'px';
-    fit.style.top = top + 'px';
+    fit.style.width = box.width + 'px';
+    fit.style.height = box.height + 'px';
+    fit.style.left = box.left + 'px';
+    fit.style.top = box.top + 'px';
 
     const group = container.closest('.group');
     const panel = group?.querySelector('[data-hover-panel]');
     if (panel) {
-        panel.style.bottom = (group.offsetHeight - top + THUMB_HOVER_PANEL_GAP) + 'px';
+        panel.style.bottom = (group.offsetHeight - box.top + THUMB_HOVER_PANEL_GAP) + 'px';
     }
 }
 
@@ -584,3 +597,388 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 window.addEventListener('resize', debounce(() => window.recomputeThumbFits(), 150));
+
+// --- Post translation notes -------------------------------------------------
+// Notes are rectangles (stored as % of the image) overlaid on a post's image,
+// following the formatting rules at https://danbooru.donmai.us/wiki_pages/help:notes.
+// Their rendered content is always visible (sanitized server-side before it's
+// ever sent to the browser). Any viewer can drag a note to reposition it, but
+// that's purely visual/in-memory — nothing is saved, so it resets on refresh.
+// Only the post's uploader or an admin can add/edit/delete notes.
+
+function stripTags(html) {
+    const div = document.createElement('div');
+    div.innerHTML = html || '';
+    return div.textContent || '';
+}
+
+function initPostNotes() {
+    const layer = document.querySelector('[data-notes-layer]');
+    const mediaContainer = document.querySelector('[data-post-media-container]');
+    const media = document.getElementById('post-image');
+    if (!layer || !mediaContainer || !media || media.tagName === 'VIDEO') return;
+
+    const canManage = layer.dataset.canManage === '1';
+    const storeUrl = layer.dataset.storeUrl;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+    let notes = [];
+    try {
+        notes = JSON.parse(layer.dataset.notes || '[]');
+    } catch (err) {
+        notes = [];
+    }
+
+    function jsonHeaders() {
+        return {
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+        };
+    }
+
+    function positionLayer() {
+        const naturalWidth = media.naturalWidth;
+        const naturalHeight = media.naturalHeight;
+        if (!naturalWidth || !naturalHeight) return;
+
+        const box = computeContainFit(mediaContainer.clientWidth, mediaContainer.clientHeight, naturalWidth, naturalHeight);
+        layer.style.left = box.left + 'px';
+        layer.style.top = box.top + 'px';
+        layer.style.width = box.width + 'px';
+        layer.style.height = box.height + 'px';
+        layer.classList.remove('hidden');
+    }
+
+    function closeAnyOpenDialog() {
+        layer.querySelectorAll('[data-note-dialog]').forEach((el) => el.remove());
+    }
+
+    function renderNoteContent(box, note) {
+        const content = box.querySelector('[data-note-content]');
+        if (content) content.innerHTML = note.body || '';
+
+        const label = box.querySelector('[data-note-edit-label]');
+        if (label) {
+            const preview = stripTags(note.body).trim();
+            label.textContent = preview ? preview.slice(0, 60) : 'Click to edit';
+        }
+    }
+
+    // Purely client-side drag: updates the box's on-screen position only.
+    // Nothing is persisted, so it reverts to the server position on reload.
+    function bindDrag(box) {
+        let dragging = false;
+        let startX = 0;
+        let startY = 0;
+        let startLeft = 0;
+        let startTop = 0;
+
+        box.addEventListener('mousedown', (e) => {
+            dragging = true;
+            const rect = box.getBoundingClientRect();
+            const layerRect = layer.getBoundingClientRect();
+            startX = e.clientX;
+            startY = e.clientY;
+            startLeft = rect.left - layerRect.left;
+            startTop = rect.top - layerRect.top;
+
+            // Switch from percentage-based to pixel-based positioning for the drag.
+            box.style.left = startLeft + 'px';
+            box.style.top = startTop + 'px';
+
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!dragging) return;
+
+            const maxLeft = Math.max(0, layer.clientWidth - box.offsetWidth);
+            const maxTop = Math.max(0, layer.clientHeight - box.offsetHeight);
+            const newLeft = Math.min(Math.max(0, startLeft + (e.clientX - startX)), maxLeft);
+            const newTop = Math.min(Math.max(0, startTop + (e.clientY - startY)), maxTop);
+
+            box.style.left = newLeft + 'px';
+            box.style.top = newTop + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            dragging = false;
+        });
+    }
+
+    function buildNoteBox(note) {
+        const box = document.createElement('div');
+        box.dataset.noteBox = '';
+        box.dataset.noteId = note.id;
+        box.className = 'absolute border border-yellow-400/70 hover:border-yellow-300 group/note cursor-move';
+        box.style.left = note.x + '%';
+        box.style.top = note.y + '%';
+        box.style.width = note.width + '%';
+        box.style.height = note.height + '%';
+
+        const content = document.createElement('div');
+        content.dataset.noteContent = '';
+        content.className = 'w-full h-full overflow-hidden text-xs leading-tight';
+        content.innerHTML = note.body || '';
+        box.appendChild(content);
+
+        if (canManage) {
+            const label = document.createElement('div');
+            label.dataset.noteEditLabel = '';
+            label.className = 'hidden group-hover/note:block absolute z-40 left-0 top-full mt-0.5 max-w-[16rem] truncate bg-white text-gray-900 text-[11px] px-1.5 py-0.5 rounded shadow border border-gray-400 cursor-pointer';
+            const preview = stripTags(note.body).trim();
+            label.textContent = preview ? preview.slice(0, 60) : 'Click to edit';
+            label.addEventListener('mousedown', (e) => e.stopPropagation());
+            label.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openEditDialog(note, box);
+            });
+            box.appendChild(label);
+        }
+
+        bindDrag(box);
+        return box;
+    }
+
+    function renderNotes() {
+        layer.querySelectorAll('[data-note-box]').forEach((el) => el.remove());
+        notes.forEach((note) => layer.appendChild(buildNoteBox(note)));
+    }
+
+    async function deleteNote(note, box, { silent = false } = {}) {
+        if (!silent && !confirm('Delete this note?')) return;
+
+        try {
+            const res = await fetch(`/notes/${note.id}`, {
+                method: 'DELETE',
+                headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+            });
+            if (!res.ok) return;
+            notes = notes.filter((n) => n.id !== note.id);
+            box.remove();
+        } catch (err) {
+            // Leave the note in place if deletion failed.
+        }
+    }
+
+    // The five-button editor dialog (Save / Preview / Cancel / Delete / History),
+    // matching https://danbooru.donmai.us/wiki_pages/help:notes.
+    function openEditDialog(note, box, { isNew = false } = {}) {
+        closeAnyOpenDialog();
+
+        const dialog = document.createElement('div');
+        dialog.dataset.noteDialog = '';
+        dialog.className = 'absolute z-50 w-72 bg-gray-900 text-gray-100 border border-gray-600 rounded shadow-2xl p-3 text-xs';
+
+        const boxLeft = parseFloat(box.style.left) || 0;
+        const boxTop = parseFloat(box.style.top) || 0;
+        const boxHeight = parseFloat(box.style.height) || 0;
+        dialog.style.left = Math.min(boxLeft, Math.max(0, layer.clientWidth - 288)) + 'px';
+        dialog.style.top = (boxTop + boxHeight + 6) + 'px';
+
+        dialog.innerHTML = `
+            <div class="flex items-center justify-between mb-2 gap-2">
+                <span class="font-semibold">Editing note #${note.id} (<a href="https://danbooru.donmai.us/wiki_pages/help:notes" target="_blank" rel="noopener" class="text-sky-400 hover:underline font-normal">view help</a>)</span>
+                <button type="button" data-close class="text-gray-400 hover:text-white cursor-pointer shrink-0">×</button>
+            </div>
+            <textarea data-textarea class="w-full h-28 px-2 py-1.5 rounded border border-sky-500 bg-white text-gray-900 text-xs resize-y" spellcheck="false"></textarea>
+            <div data-preview class="hidden w-full min-h-28 px-2 py-1.5 rounded border border-gray-600 bg-white text-gray-900 text-xs overflow-auto"></div>
+            <div class="flex flex-wrap gap-1.5 mt-2">
+                <button type="button" data-save class="px-2 py-1 rounded bg-green-700 hover:bg-green-800 text-white cursor-pointer">Save</button>
+                <button type="button" data-preview-btn class="px-2 py-1 rounded bg-gray-700 hover:bg-gray-600 text-white cursor-pointer">Preview</button>
+                <button type="button" data-cancel class="px-2 py-1 rounded bg-gray-700 hover:bg-gray-600 text-white cursor-pointer">Cancel</button>
+                <button type="button" data-delete class="px-2 py-1 rounded bg-red-800 hover:bg-red-900 text-white cursor-pointer">Delete</button>
+                <a href="/notes/${note.id}/history" data-history class="px-2 py-1 rounded bg-gray-700 hover:bg-gray-600 text-white cursor-pointer inline-block">History</a>
+            </div>
+        `;
+
+        layer.appendChild(dialog);
+        dialog.addEventListener('mousedown', (e) => e.stopPropagation());
+
+        const textarea = dialog.querySelector('[data-textarea]');
+        textarea.value = note.body || '';
+        textarea.focus();
+
+        const previewBox = dialog.querySelector('[data-preview]');
+        const previewBtn = dialog.querySelector('[data-preview-btn]');
+        let previewOn = false;
+
+        previewBtn.addEventListener('click', async () => {
+            previewOn = !previewOn;
+
+            if (previewOn) {
+                previewBox.innerHTML = '<span class="text-gray-400">Loading preview…</span>';
+                textarea.classList.add('hidden');
+                previewBox.classList.remove('hidden');
+                previewBtn.textContent = 'Edit';
+
+                try {
+                    const res = await fetch('/notes/preview', {
+                        method: 'POST',
+                        headers: jsonHeaders(),
+                        body: JSON.stringify({ body: textarea.value }),
+                    });
+                    const data = await res.json();
+                    previewBox.innerHTML = data.html || '<span class="text-gray-400">Nothing to preview.</span>';
+                } catch (err) {
+                    previewBox.innerHTML = '<span class="text-red-600">Preview failed.</span>';
+                }
+            } else {
+                previewBox.classList.add('hidden');
+                textarea.classList.remove('hidden');
+                previewBtn.textContent = 'Preview';
+            }
+        });
+
+        function closeDialog() {
+            dialog.remove();
+        }
+
+        dialog.querySelector('[data-close]').addEventListener('click', () => cancelEdit());
+        dialog.querySelector('[data-cancel]').addEventListener('click', () => cancelEdit());
+
+        function cancelEdit() {
+            closeDialog();
+            if (isNew) {
+                deleteNote(note, box, { silent: true });
+            }
+        }
+
+        dialog.querySelector('[data-delete]').addEventListener('click', () => {
+            closeDialog();
+            deleteNote(note, box);
+        });
+
+        dialog.querySelector('[data-save]').addEventListener('click', async () => {
+            const text = textarea.value;
+
+            try {
+                const res = await fetch(`/notes/${note.id}`, {
+                    method: 'PUT',
+                    headers: jsonHeaders(),
+                    body: JSON.stringify({ body: text, x: note.x, y: note.y, width: note.width, height: note.height }),
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    Object.assign(note, data.note);
+                    renderNoteContent(box, note);
+                }
+            } finally {
+                closeDialog();
+            }
+        });
+    }
+
+    // Drawing a brand-new note rectangle (admin/uploader only). Matches
+    // Danbooru: an empty note is created immediately, then the editor opens.
+    let drawing = false;
+    let drawStart = null;
+    let drawBox = null;
+
+    function onDrawMouseDown(e) {
+        if (e.target !== layer) return;
+
+        drawing = true;
+        const rect = layer.getBoundingClientRect();
+        drawStart = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+
+        drawBox = document.createElement('div');
+        drawBox.className = 'absolute border-2 border-dashed border-sky-500 bg-sky-400/10';
+        drawBox.style.left = drawStart.x + 'px';
+        drawBox.style.top = drawStart.y + 'px';
+        layer.appendChild(drawBox);
+
+        document.addEventListener('mousemove', onDrawMouseMove);
+        document.addEventListener('mouseup', onDrawMouseUp);
+    }
+
+    function onDrawMouseMove(e) {
+        if (!drawing || !drawBox) return;
+
+        const rect = layer.getBoundingClientRect();
+        const currX = Math.max(0, Math.min(e.clientX - rect.left, layer.clientWidth));
+        const currY = Math.max(0, Math.min(e.clientY - rect.top, layer.clientHeight));
+
+        drawBox.style.left = Math.min(currX, drawStart.x) + 'px';
+        drawBox.style.top = Math.min(currY, drawStart.y) + 'px';
+        drawBox.style.width = Math.abs(currX - drawStart.x) + 'px';
+        drawBox.style.height = Math.abs(currY - drawStart.y) + 'px';
+    }
+
+    async function onDrawMouseUp() {
+        document.removeEventListener('mousemove', onDrawMouseMove);
+        document.removeEventListener('mouseup', onDrawMouseUp);
+        drawing = false;
+
+        const rectPx = {
+            left: parseFloat(drawBox.style.left) || 0,
+            top: parseFloat(drawBox.style.top) || 0,
+            width: parseFloat(drawBox.style.width) || 0,
+            height: parseFloat(drawBox.style.height) || 0,
+        };
+
+        drawBox.remove();
+        drawBox = null;
+        exitDrawMode();
+
+        if (rectPx.width < 8 || rectPx.height < 8) return;
+
+        const payload = {
+            body: '',
+            x: (rectPx.left / layer.clientWidth) * 100,
+            y: (rectPx.top / layer.clientHeight) * 100,
+            width: (rectPx.width / layer.clientWidth) * 100,
+            height: (rectPx.height / layer.clientHeight) * 100,
+        };
+
+        try {
+            const res = await fetch(storeUrl, {
+                method: 'POST',
+                headers: jsonHeaders(),
+                body: JSON.stringify(payload),
+            });
+            if (res.ok) {
+                const data = await res.json();
+                notes.push(data.note);
+                const box = buildNoteBox(data.note);
+                layer.appendChild(box);
+                openEditDialog(data.note, box, { isNew: true });
+            }
+        } catch (err) {
+            // Drawing silently fails; the user can just try again.
+        }
+    }
+
+    function enterDrawMode() {
+        layer.style.cursor = 'crosshair';
+        layer.addEventListener('mousedown', onDrawMouseDown);
+        if (addNoteBtn) addNoteBtn.textContent = 'Cancel adding note';
+    }
+
+    function exitDrawMode() {
+        layer.style.cursor = '';
+        layer.removeEventListener('mousedown', onDrawMouseDown);
+        if (addNoteBtn) addNoteBtn.textContent = 'Add note';
+    }
+
+    if (media.complete && media.naturalWidth) positionLayer();
+    media.addEventListener('load', positionLayer);
+    window.addEventListener('resize', debounce(positionLayer, 150));
+    window.recomputePostNotesLayer = positionLayer;
+
+    renderNotes();
+
+    const addNoteBtn = document.getElementById('add-note-btn');
+    let drawModeOn = false;
+    addNoteBtn?.addEventListener('click', () => {
+        drawModeOn = !drawModeOn;
+        if (drawModeOn) {
+            enterDrawMode();
+        } else {
+            exitDrawMode();
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', initPostNotes);

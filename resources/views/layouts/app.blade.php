@@ -15,6 +15,7 @@
         $isAuthSection = request()->routeIs('login') || request()->routeIs('register');
         $isAccountSection = request()->routeIs('account.*');
         $isCommentsSection = request()->routeIs('comments.index');
+        $isNotesSection = request()->routeIs('notes.index');
     @endphp
     <header class="bg-gallery-green border-b border-green-800">
         <div class="w-full px-6 py-2 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm font-medium">
@@ -33,7 +34,8 @@
                 class="text-green-900 {{ request()->routeIs('posts.index') || request()->routeIs('posts.show') ? 'font-bold text-base' : '' }}">Posts</a>
             <a href="{{ route('comments.index') }}"
                 class="text-green-900 {{ $isCommentsSection ? 'font-bold text-base' : '' }}">Comments</a>
-            <span class="text-gray-600 cursor-not-allowed">Notes</span>
+            <a href="{{ route('notes.index') }}"
+                class="text-green-900 {{ $isNotesSection ? 'font-bold text-base' : '' }}">Notes</a>
             <span class="text-gray-600 cursor-not-allowed">Artists</span>
             <span class="text-gray-600 cursor-not-allowed">Tags</span>
             <span class="text-gray-600 cursor-not-allowed">Pools</span>
@@ -68,6 +70,10 @@
                         <span class="cursor-not-allowed">On My Uploads</span>
                     @endauth
                     <span class="cursor-not-allowed">Search</span>
+                    <span class="cursor-not-allowed">Help</span>
+                @elseif ($isNotesSection)
+                    <a href="{{ route('notes.index') }}"
+                        class="hover:text-gray-200 cursor-pointer font-bold text-gray-200">Notes</a>
                     <span class="cursor-not-allowed">Help</span>
                 @else
                     <a href="{{ route('posts.index') }}"

@@ -108,6 +108,16 @@
                             Resize to window
                         </button>
                     </li>
+                    @unless ($post->isVideo())
+                        @if ($post->canManageNotes(auth()->user()))
+                            <li>
+                                <button type="button" id="add-note-btn"
+                                    class="text-gray-700 hover:underline text-left cursor-pointer">
+                                    Add note
+                                </button>
+                            </li>
+                        @endif
+                    @endunless
                     <li>
                         <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->file_path) }}"
                             target="_blank" class="text-gray-700 hover:underline">View original</a>
@@ -128,15 +138,23 @@
             </div>
 
             <div class="relative rounded p-2 mb-3">
-                @if ($post->isVideo())
-                    <video id="post-image"
-                        src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->file_path) }}" controls
-                        class="w-full max-h-[80vh] object-contain rounded mx-auto"></video>
-                @else
-                    <img id="post-image"
-                        src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->file_path) }}"
-                        alt="post {{ $post->id }}" class="w-full max-h-[80vh] object-contain rounded mx-auto">
-                @endif
+                <div class="relative" data-post-media-container>
+                    @if ($post->isVideo())
+                        <video id="post-image"
+                            src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->file_path) }}"
+                            controls class="w-full max-h-[80vh] object-contain rounded mx-auto"></video>
+                    @else
+                        <img id="post-image"
+                            src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->file_path) }}"
+                            alt="post {{ $post->id }}" class="w-full max-h-[80vh] object-contain rounded mx-auto">
+
+                        <div id="notes-layer" class="absolute hidden" data-notes-layer
+                            data-post-id="{{ $post->id }}"
+                            data-can-manage="{{ $post->canManageNotes(auth()->user()) ? '1' : '0' }}"
+                            data-store-url="{{ route('notes.store', $post) }}"
+                            data-notes="{{ $post->notes->map->toOverlayArray()->toJson() }}"></div>
+                    @endif
+                </div>
 
                 @auth
                     <button type="button" id="fav-btn" data-post-id="{{ $post->id }}"
@@ -515,12 +533,14 @@
                 active = true;
                 img.className = enlargedClasses.join(' ');
                 if (btn) btn.textContent = 'Fit to window';
+                window.recomputePostNotesLayer?.();
             }
 
             function deactivate() {
                 active = false;
                 img.className = defaultClasses.join(' ');
                 if (btn) btn.textContent = 'Resize to window';
+                window.recomputePostNotesLayer?.();
             }
 
             btn?.addEventListener('click', (e) => {

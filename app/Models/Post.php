@@ -52,6 +52,16 @@ class Post extends Model
 
     public function canManageThumbnail(?User $user): bool
     {
+        return $this->isManagedBy($user);
+    }
+
+    public function canManageNotes(?User $user): bool
+    {
+        return $this->isManagedBy($user);
+    }
+
+    public function isManagedBy(?User $user): bool
+    {
         if (! $user) {
             return false;
         }
@@ -81,6 +91,11 @@ class Post extends Model
     public function comments(): HasMany
     {
         return $this->hasMany(Comment::class)->latest();
+    }
+
+    public function notes(): HasMany
+    {
+        return $this->hasMany(Note::class)->orderBy('id');
     }
 
     public function favoritedBy(): BelongsToMany

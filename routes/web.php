@@ -6,6 +6,7 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommentsPageController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\NoteController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TagController;
@@ -29,6 +30,14 @@ Route::post('/comments/upload-image', [CommentController::class, 'uploadImage'])
 Route::get('/comments', [CommentsPageController::class, 'index'])->name('comments.index');
 Route::get('/wiki/{tag:name}', [TagController::class, 'wiki'])->name('tags.wiki');
 Route::get('/tags/autocomplete', [TagController::class, 'autocomplete'])->name('tags.autocomplete');
+
+Route::get('/notes', [NoteController::class, 'index'])->name('notes.index');
+Route::post('/posts/{post}/notes', [NoteController::class, 'store'])->name('notes.store')->middleware('auth');
+Route::post('/notes/preview', [NoteController::class, 'previewBody'])->name('notes.preview')->middleware('auth');
+Route::put('/notes/{note}', [NoteController::class, 'update'])->name('notes.update')->middleware('auth');
+Route::delete('/notes/{note}', [NoteController::class, 'destroy'])->name('notes.destroy')->middleware('auth');
+Route::get('/notes/{note}/history', [NoteController::class, 'history'])->name('notes.history');
+Route::post('/notes/{note}/versions/{version}/revert', [NoteController::class, 'revert'])->name('notes.revert')->middleware('auth');
 
 Route::get('/upload', [UploadController::class, 'create'])->name('upload.create')->middleware('auth');
 Route::post('/upload', [UploadController::class, 'store'])->name('upload.store')->middleware('auth');
