@@ -115,3 +115,136 @@
     content: '' !important;
     margin-top: 0.125rem !important;
 }
+
+[data-note-box],
+[data-note-preview],
+.note-content,
+.note-resize-handle {
+    box-sizing: border-box;
+}
+
+[data-note-box] {
+    overflow: visible;
+}
+
+.note-content {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.note-resize-handle {
+    position: absolute;
+    z-index: 30;
+    width: 12px;
+    height: 12px;
+    background: #fff;
+    border: 1px solid #2563eb;
+    border-radius: 9999px;
+    opacity: 0;
+    transition: opacity 120ms ease;
+}
+
+.group\/note:hover .note-resize-handle,
+[data-note-box]:focus-within .note-resize-handle {
+    opacity: 1;
+}
+
+.note-resize-nw {
+    left: -6px;
+    top: -6px;
+}
+
+.note-resize-ne {
+    right: -6px;
+    top: -6px;
+}
+
+.note-resize-sw {
+    left: -6px;
+    bottom: -6px;
+}
+
+.note-resize-se {
+    right: -6px;
+    bottom: -6px;
+}
+
+[data-note-preview] > * {
+    min-height: 100%;
+}
+
+[data-note-dialog] {
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    overflow: visible;
+}
+
+[data-note-dialog] > div:first-child {
+    flex-shrink: 0;
+    pointer-events: none;
+}
+
+[data-note-dialog] > div:first-child > * {
+    pointer-events: auto;
+}
+
+[data-edit-container] {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+[data-edit-container] > * {
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    box-sizing: border-box;
+    pointer-events: auto;
+}
+
+[data-note-dialog] > div:last-child {
+    flex-shrink: 0;
+    pointer-events: none;
+}
+
+[data-note-dialog] > div:last-child > * {
+    pointer-events: auto;
+}
+
+.dialog-resize-handle {
+    position: absolute;
+    z-index: 30;
+    width: 12px;
+    height: 12px;
+    background: #fff;
+    border: 1px solid #2563eb;
+    border-radius: 9999px;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.dialog-resize-nw {
+    left: -6px;
+    top: -6px;
+}
+
+.dialog-resize-ne {
+    right: -6px;
+    top: -6px;
+}
+
+.dialog-resize-sw {
+    left: -6px;
+    bottom: -6px;
+}
+
+.dialog-resize-se {
+    right: -6px;
+    bottom: -6px;
+}

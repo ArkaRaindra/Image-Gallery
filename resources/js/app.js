@@ -621,8 +621,17 @@ function initPostNotes() {
     const canManage = layer.dataset.canManage === '1';
     const storeUrl = layer.dataset.storeUrl;
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-
+    const minimumNoteSize = 8;
     let notes = [];
+    let notesVisible = true;
+    let drawModeOn = false;
+    let drawing = false;
+    let drawStart = null;
+    let drawBox = null;
+    let suppressNextOutsideClick = false;
+    let currentDialog = null;
+    let currentDialogBox = null;
+
     try {
         notes = JSON.parse(layer.dataset.notes || '[]');
     } catch (err) {
@@ -637,6 +646,107 @@ function initPostNotes() {
         };
     }
 
+    function clamp(value, minimum, maximum) {
+        return Math.min(maximum, Math.max(minimum, value));
+    }
+
+    function getBoxGeometry(box) {
+        return {
+            x: parseFloat(box.style.left) || 0,
+            y: parseFloat(box.style.top) || 0,
+            width: parseFloat(box.style.width) || 0,
+            height: parseFloat(box.style.height) || 0,
+        };
+    }
+
+    function clampGeometry(geometry) {
+        const width = clamp(geometry.width || 0, 0.05, 100);
+        const height = clamp(geometry.height || 0, 0.05, 100);
+        const x = clamp(geometry.x || 0, 0, 100 - width);
+        const y = clamp(geometry.y || 0, 0, 100 - height);
+
+        return { x, y, width, height };
+    }
+
+    function setBoxGeometry(box, geometry) {
+        const clamped = clampGeometry(geometry);
+        box.style.left = clamped.x + '%';
+        box.style.top = clamped.y + '%';
+        box.style.width = clamped.width + '%';
+        box.style.height = clamped.height + '%';
+    }
+
+    function getBoxPixelRect(box) {
+        const boxRect = box.getBoundingClientRect();
+        const layerRect = layer.getBoundingClientRect();
+
+        return {
+            left: boxRect.left - layerRect.left,
+            top: boxRect.top - layerRect.top,
+            width: boxRect.width,
+            height: boxRect.height,
+        };
+    }
+
+    function setBoxPixelRect(box, rect) {
+        setBoxGeometry(box, {
+            x: rect.left / layer.clientWidth * 100,
+            y: rect.top / layer.clientHeight * 100,
+            width: rect.width / layer.clientWidth * 100,
+            height: rect.height / layer.clientHeight * 100,
+        });
+    }
+
+    function clampDragRect(rect) {
+        const width = Math.max(minimumNoteSize, rect.width);
+        const height = Math.max(minimumNoteSize, rect.height);
+        const left = clamp(rect.left, 0, Math.max(0, layer.clientWidth - width));
+        const top = clamp(rect.top, 0, Math.max(0, layer.clientHeight - height));
+
+        return { left, top, width, height };
+    }
+
+    function findHtmlBackground(html) {
+        const probe = document.createElement('div');
+        probe.innerHTML = html || '';
+        const candidates = [probe.firstElementChild, ...probe.querySelectorAll('[style]')];
+
+        for (const element of candidates) {
+            if (!element?.style) continue;
+
+            const backgroundColor = element.style.backgroundColor;
+            const background = element.style.background;
+            const value = backgroundColor || background;
+            if (value && value !== 'transparent' && value !== 'none') {
+                return value;
+            }
+        }
+
+        return '';
+    }
+
+    function applyHtmlBackground(element, html) {
+        const background = findHtmlBackground(html);
+        element.style.background = background || '';
+    }
+
+    function isPositionChanged(box, note) {
+        const geometry = getBoxGeometry(box);
+        return Math.abs(geometry.x - note.x) > 0.01 || Math.abs(geometry.y - note.y) > 0.01;
+    }
+
+    function toggleNoteBorder(box, note) {
+        const positionChanged = isPositionChanged(box, note);
+        if (box.dataset.borderState === 'blue') {
+            const stableColor = positionChanged ? 'border-red-500' : 'border-black';
+            box.dataset.borderState = positionChanged ? 'red' : 'black';
+            setNoteBorder(box, stableColor);
+        } else {
+            box.dataset.borderState = 'blue';
+            setNoteBorder(box, 'border-blue-500');
+        }
+    }
+
     function positionLayer() {
         const naturalWidth = media.naturalWidth;
         const naturalHeight = media.naturalHeight;
@@ -647,7 +757,7 @@ function initPostNotes() {
         layer.style.top = box.top + 'px';
         layer.style.width = box.width + 'px';
         layer.style.height = box.height + 'px';
-        layer.classList.remove('hidden');
+        layer.classList.toggle('hidden', !notesVisible);
     }
 
     // Border color state machine: clicking always turns the border blue while
@@ -664,9 +774,34 @@ function initPostNotes() {
 
     function closeAnyOpenDialog() {
         layer.querySelectorAll('[data-note-dialog]').forEach((el) => el.remove());
+        currentDialog = null;
+        currentDialogBox = null;
+    }
+
+    function repositionDialog() {
+        if (!currentDialog || !currentDialogBox) return;
+        const boxRect = getBoxPixelRect(currentDialogBox);
+        const gap = 6;
+        const dialogWidth = currentDialog.offsetWidth || 288;
+        const dialogHeight = currentDialog.offsetHeight || 240;
+        let dialogLeft = boxRect.left;
+        let dialogTop = boxRect.top + boxRect.height + gap;
+        if (dialogTop + dialogHeight > layer.clientHeight) {
+            dialogTop = boxRect.top - dialogHeight - gap;
+        }
+        dialogLeft = clamp(dialogLeft, 0, Math.max(0, layer.clientWidth - dialogWidth));
+        dialogTop = clamp(dialogTop, 0, Math.max(0, layer.clientHeight - dialogHeight));
+        currentDialog.style.left = dialogLeft + 'px';
+        currentDialog.style.top = dialogTop + 'px';
     }
 
     function renderNoteContent(box, note) {
+        const content = box.querySelector('[data-note-content]');
+        if (content) {
+            content.innerHTML = '';
+        }
+        applyHtmlBackground(box, note.body);
+
         const tooltip = box.querySelector('[data-note-tooltip]');
         if (!tooltip) return;
 
@@ -674,89 +809,118 @@ function initPostNotes() {
         tooltip.innerHTML = hasBody ? note.body : 'Click to edit';
     }
 
-    // Purely client-side drag: updates the box's on-screen position only.
-    // Nothing is persisted, so it reverts to the server position on reload.
     function bindDrag(box, note) {
         let dragging = false;
         let startX = 0;
         let startY = 0;
-        let startLeft = 0;
-        let startTop = 0;
-
-        function originalPixelPosition() {
-            return {
-                left: (note.x / 100) * layer.clientWidth,
-                top: (note.y / 100) * layer.clientHeight,
-            };
-        }
-
-        function isPositionChanged() {
-            const currentLeft = parseFloat(box.style.left);
-            const currentTop = parseFloat(box.style.top);
-            const original = originalPixelPosition();
-            return Math.abs(currentLeft - original.left) > 2 || Math.abs(currentTop - original.top) > 2;
-        }
+        let startRect = null;
 
         function onDragMove(e) {
-            if (!dragging) return;
+            if (!dragging || !startRect) return;
 
-            const maxLeft = Math.max(0, layer.clientWidth - box.offsetWidth);
-            const maxTop = Math.max(0, layer.clientHeight - box.offsetHeight);
-            const newLeft = Math.min(Math.max(0, startLeft + (e.clientX - startX)), maxLeft);
-            const newTop = Math.min(Math.max(0, startTop + (e.clientY - startY)), maxTop);
-
-            box.style.left = newLeft + 'px';
-            box.style.top = newTop + 'px';
+            const rect = clampDragRect({
+                left: startRect.left + (e.clientX - startX),
+                top: startRect.top + (e.clientY - startY),
+                width: startRect.width,
+                height: startRect.height,
+            });
+            setBoxPixelRect(box, rect);
+            repositionDialog();
         }
 
         function onDragEnd() {
             if (!dragging) return;
             dragging = false;
+            const geometry = getBoxGeometry(box);
+            note.x = geometry.x;
+            note.y = geometry.y;
+            note.width = geometry.width;
+            note.height = geometry.height;
+            startRect = null;
+            document.removeEventListener('mousemove', onDragMove);
+            document.removeEventListener('mouseup', onDragEnd);
         }
 
         box.addEventListener('mousedown', (e) => {
-            if (e.target.closest('[data-note-tooltip]')) return;
+            if (e.target.closest('[data-note-tooltip], [data-note-resize-handle]')) return;
 
-            // Toggle border color based on current position state:
-            // - If position unchanged: toggle between black and blue
-            // - If position changed: toggle between red and blue
-            if (isPositionChanged()) {
-                // Toggle red <-> blue
-                if (box.dataset.borderState === 'blue') {
-                    box.dataset.borderState = 'red';
-                    setNoteBorder(box, 'border-red-500');
-                } else {
-                    box.dataset.borderState = 'blue';
-                    setNoteBorder(box, 'border-blue-500');
-                }
-            } else {
-                // Toggle black <-> blue
-                if (box.dataset.borderState === 'blue') {
-                    box.dataset.borderState = 'black';
-                    setNoteBorder(box, 'border-black');
-                } else {
-                    box.dataset.borderState = 'blue';
-                    setNoteBorder(box, 'border-blue-500');
-                }
-            }
-
+            toggleNoteBorder(box, note);
             dragging = true;
-
-            const rect = box.getBoundingClientRect();
-            const layerRect = layer.getBoundingClientRect();
+            startRect = getBoxPixelRect(box);
             startX = e.clientX;
             startY = e.clientY;
-            startLeft = rect.left - layerRect.left;
-            startTop = rect.top - layerRect.top;
-
-            // Switch from percentage-based to pixel-based positioning for the drag.
-            box.style.left = startLeft + 'px';
-            box.style.top = startTop + 'px';
 
             document.addEventListener('mousemove', onDragMove, { passive: true });
-            document.addEventListener('mouseup', onDragEnd, { once: true });
+            document.addEventListener('mouseup', onDragEnd);
 
             e.preventDefault();
+        });
+    }
+
+    function bindResize(box) {
+        ['nw', 'ne', 'sw', 'se'].forEach((direction) => {
+            const handle = document.createElement('div');
+            handle.dataset.noteResizeHandle = direction;
+            handle.className = 'note-resize-handle note-resize-' + direction;
+            handle.style.cursor = direction === 'nw' || direction === 'se' ? 'nwse-resize' : 'nesw-resize';
+            box.appendChild(handle);
+
+            handle.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const startRect = getBoxPixelRect(box);
+                const startX = e.clientX;
+                const startY = e.clientY;
+                let resizing = true;
+
+                function onResizeMove(event) {
+                    if (!resizing) return;
+
+                    const deltaX = event.clientX - startX;
+                    const deltaY = event.clientY - startY;
+                    let left = startRect.left;
+                    let top = startRect.top;
+                    let right = startRect.left + startRect.width;
+                    let bottom = startRect.top + startRect.height;
+
+                    if (direction.includes('w')) {
+                        left = clamp(startRect.left + deltaX, 0, right - minimumNoteSize);
+                    }
+                    if (direction.includes('e')) {
+                        right = clamp(startRect.left + startRect.width + deltaX, left + minimumNoteSize, layer.clientWidth);
+                    }
+                    if (direction.includes('n')) {
+                        top = clamp(startRect.top + deltaY, 0, bottom - minimumNoteSize);
+                    }
+                    if (direction.includes('s')) {
+                        bottom = clamp(startRect.top + startRect.height + deltaY, top + minimumNoteSize, layer.clientHeight);
+                    }
+
+                    setBoxPixelRect(box, {
+                        left,
+                        top,
+                        width: right - left,
+                        height: bottom - top,
+                    });
+                    repositionDialog();
+                }
+
+                function onResizeEnd() {
+                    if (!resizing) return;
+                    resizing = false;
+                    const geometry = getBoxGeometry(box);
+                    note.x = geometry.x;
+                    note.y = geometry.y;
+                    note.width = geometry.width;
+                    note.height = geometry.height;
+                    document.removeEventListener('mousemove', onResizeMove);
+                    document.removeEventListener('mouseup', onResizeEnd);
+                }
+
+                document.addEventListener('mousemove', onResizeMove, { passive: true });
+                document.addEventListener('mouseup', onResizeEnd);
+            });
         });
     }
 
@@ -766,18 +930,17 @@ function initPostNotes() {
         box.dataset.noteId = note.id;
         box.dataset.borderState = 'black';
         box.className = 'absolute border-2 border-black group/note cursor-move';
-        box.style.backgroundImage = 'repeating-linear-gradient(45deg, rgba(0,0,0,0.06), rgba(0,0,0,0.06) 4px, transparent 4px, transparent 8px)';
         box.style.left = note.x + '%';
         box.style.top = note.y + '%';
         box.style.width = note.width + '%';
         box.style.height = note.height + '%';
 
-        const hasBody = stripTags(note.body).trim() !== '';
+        const content = document.createElement('div');
+        content.dataset.noteContent = '';
+        content.className = 'note-content';
+        box.appendChild(content);
 
-        // The note itself stays empty — its translation only shows in a
-        // popup underneath when hovered. Viewers only get this popup when
-        // there's actually something to read; editors also get it empty
-        // (as "Click to edit") so they have something to click.
+        const hasBody = stripTags(note.body).trim() !== '';
         if (canManage || hasBody) {
             const tooltip = document.createElement('div');
             tooltip.dataset.noteTooltip = '';
@@ -796,7 +959,11 @@ function initPostNotes() {
             box.appendChild(tooltip);
         }
 
+        if (canManage) {
+            bindResize(box);
+        }
         bindDrag(box, note);
+        renderNoteContent(box, note);
         return box;
     }
 
@@ -813,7 +980,9 @@ function initPostNotes() {
                 method: 'DELETE',
                 headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
             });
-            if (!res.ok) return;
+            if (!res.ok) {
+                return;
+            }
             notes = notes.filter((n) => n.id !== note.id);
             box.remove();
         } catch (err) {
@@ -828,21 +997,35 @@ function initPostNotes() {
 
         const dialog = document.createElement('div');
         dialog.dataset.noteDialog = '';
-        dialog.className = 'absolute z-50 w-72 bg-gray-900 text-gray-100 border border-gray-600 rounded shadow-2xl p-3 text-xs';
+        dialog.className = 'absolute z-50 w-72 min-w-[16rem] min-h-[12rem] max-w-full max-h-full overflow-auto bg-gray-900 text-gray-100 border border-gray-600 rounded shadow-2xl p-3 text-xs';
+        layer.appendChild(dialog);
 
-        const boxLeft = parseFloat(box.style.left) || 0;
-        const boxTop = parseFloat(box.style.top) || 0;
-        const boxHeight = parseFloat(box.style.height) || 0;
-        dialog.style.left = Math.min(boxLeft, Math.max(0, layer.clientWidth - 288)) + 'px';
-        dialog.style.top = (boxTop + boxHeight + 6) + 'px';
+        const boxRect = getBoxPixelRect(box);
+        const gap = 6;
+        let dialogLeft = boxRect.left;
+        let dialogTop = boxRect.top + boxRect.height + gap;
+        const dialogWidth = dialog.offsetWidth || 288;
+        const dialogHeight = dialog.offsetHeight || 240;
+        if (dialogTop + dialogHeight > layer.clientHeight) {
+            dialogTop = boxRect.top - dialogHeight - gap;
+        }
+        dialogLeft = clamp(dialogLeft, 0, Math.max(0, layer.clientWidth - dialogWidth));
+        dialogTop = clamp(dialogTop, 0, Math.max(0, layer.clientHeight - dialogHeight));
+        dialog.style.left = dialogLeft + 'px';
+        dialog.style.top = dialogTop + 'px';
+
+        currentDialog = dialog;
+        currentDialogBox = box;
 
         dialog.innerHTML = `
             <div class="flex items-center justify-between mb-2 gap-2">
                 <span class="font-semibold">Editing note #${note.id} (<a href="https://danbooru.donmai.us/wiki_pages/help:notes" target="_blank" rel="noopener" class="text-sky-400 hover:underline font-normal">view help</a>)</span>
                 <button type="button" data-close class="text-gray-400 hover:text-white cursor-pointer shrink-0">×</button>
             </div>
-            <textarea data-textarea class="w-full h-28 px-2 py-1.5 rounded border border-sky-500 bg-white text-gray-900 text-xs resize-y" spellcheck="false"></textarea>
-            <div data-preview class="hidden w-full min-h-28 px-2 py-1.5 rounded border border-gray-600 text-gray-900 text-xs overflow-auto"></div>
+            <div data-edit-container>
+                <textarea data-textarea class="w-full flex-1 px-2 py-1.5 rounded border border-sky-500 bg-white text-gray-900 text-xs resize-none" spellcheck="false"></textarea>
+                <div data-preview-container class="hidden w-full flex-1 px-2 py-1.5 rounded border border-sky-500 bg-white text-gray-900 text-xs overflow-auto"></div>
+            </div>
             <div class="flex flex-wrap gap-1.5 mt-2">
                 <button type="button" data-save class="px-2 py-1 rounded bg-green-700 hover:bg-green-800 text-white cursor-pointer">Save</button>
                 <button type="button" data-preview-btn class="px-2 py-1 rounded bg-gray-700 hover:bg-gray-600 text-white cursor-pointer">Preview</button>
@@ -852,46 +1035,108 @@ function initPostNotes() {
             </div>
         `;
 
-        layer.appendChild(dialog);
         dialog.addEventListener('mousedown', (e) => e.stopPropagation());
 
+        // Add resize handles to dialog
+        const minDialogWidth = 256;
+        const minDialogHeight = 192;
+        ['nw', 'ne', 'sw', 'se'].forEach((direction) => {
+            const handle = document.createElement('div');
+            handle.dataset.dialogResizeHandle = direction;
+            handle.className = 'dialog-resize-handle dialog-resize-' + direction;
+            handle.style.cursor = direction === 'nw' || direction === 'se' ? 'nwse-resize' : 'nesw-resize';
+            dialog.appendChild(handle);
+
+            handle.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const startLeft = dialog.offsetLeft;
+                const startTop = dialog.offsetTop;
+                const startWidth = dialog.offsetWidth;
+                const startHeight = dialog.offsetHeight;
+                const startX = e.clientX;
+                const startY = e.clientY;
+                let resizing = true;
+
+                function onResizeMove(event) {
+                    if (!resizing) return;
+
+                    const deltaX = event.clientX - startX;
+                    const deltaY = event.clientY - startY;
+                    let left = startLeft;
+                    let top = startTop;
+                    let right = startLeft + startWidth;
+                    let bottom = startTop + startHeight;
+
+                    if (direction.includes('w')) {
+                        left = Math.max(0, Math.min(startLeft + deltaX, right - minDialogWidth));
+                    }
+                    if (direction.includes('e')) {
+                        right = Math.min(layer.clientWidth, Math.max(startLeft + startWidth + deltaX, left + minDialogWidth));
+                    }
+                    if (direction.includes('n')) {
+                        top = Math.max(0, Math.min(startTop + deltaY, bottom - minDialogHeight));
+                    }
+                    if (direction.includes('s')) {
+                        bottom = Math.min(layer.clientHeight, Math.max(startTop + startHeight + deltaY, top + minDialogHeight));
+                    }
+
+                    dialog.style.left = left + 'px';
+                    dialog.style.top = top + 'px';
+                    dialog.style.width = (right - left) + 'px';
+                    dialog.style.height = (bottom - top) + 'px';
+                }
+
+                function onResizeEnd() {
+                    if (!resizing) return;
+                    resizing = false;
+                    document.removeEventListener('mousemove', onResizeMove);
+                    document.removeEventListener('mouseup', onResizeEnd);
+                }
+
+                document.addEventListener('mousemove', onResizeMove, { passive: true });
+                document.addEventListener('mouseup', onResizeEnd);
+            });
+        });
+
         const textarea = dialog.querySelector('[data-textarea]');
+        const previewContainer = dialog.querySelector('[data-preview-container]');
         textarea.value = note.body || '';
         textarea.focus();
 
-        const previewBox = dialog.querySelector('[data-preview]');
         const previewBtn = dialog.querySelector('[data-preview-btn]');
         let previewOn = false;
 
+        async function updatePreview() {
+            previewContainer.innerHTML = '<span class="text-gray-400">Loading preview…</span>';
+            try {
+                const res = await fetch('/notes/preview', {
+                    method: 'POST',
+                    headers: jsonHeaders(),
+                    body: JSON.stringify({ body: textarea.value }),
+                });
+                const data = await res.json();
+                const html = data.html || '';
+                previewContainer.innerHTML = html || '<span class="text-gray-400">Nothing to preview.</span>';
+                applyHtmlBackground(previewContainer, html);
+            } catch (err) {
+                previewContainer.innerHTML = '<span class="text-red-600">Preview failed.</span>';
+            }
+        }
+
         previewBtn.addEventListener('click', async () => {
             previewOn = !previewOn;
-
-            if (previewOn) {
-                previewBox.innerHTML = '<span class="text-gray-400">Loading preview…</span>';
-                textarea.classList.add('hidden');
-                previewBox.classList.remove('hidden');
-                previewBtn.textContent = 'Edit';
-
-                try {
-                    const res = await fetch('/notes/preview', {
-                        method: 'POST',
-                        headers: jsonHeaders(),
-                        body: JSON.stringify({ body: textarea.value }),
-                    });
-                    const data = await res.json();
-                    previewBox.innerHTML = data.html || '<span class="text-gray-400">Nothing to preview.</span>';
-                } catch (err) {
-                    previewBox.innerHTML = '<span class="text-red-600">Preview failed.</span>';
-                }
-            } else {
-                previewBox.classList.add('hidden');
-                textarea.classList.remove('hidden');
-                previewBtn.textContent = 'Preview';
-            }
+            textarea.classList.toggle('hidden', previewOn);
+            previewContainer.classList.toggle('hidden', !previewOn);
+            previewBtn.textContent = previewOn ? 'Edit' : 'Preview';
+            if (previewOn) await updatePreview();
         });
 
         function closeDialog() {
             dialog.remove();
+            currentDialog = null;
+            currentDialogBox = null;
         }
 
         dialog.querySelector('[data-close]').addEventListener('click', () => cancelEdit());
@@ -911,37 +1156,42 @@ function initPostNotes() {
 
         dialog.querySelector('[data-save]').addEventListener('click', async () => {
             const text = textarea.value;
+            const geometry = getBoxGeometry(box);
 
             try {
                 const res = await fetch(`/notes/${note.id}`, {
                     method: 'PUT',
                     headers: jsonHeaders(),
-                    body: JSON.stringify({ body: text, x: note.x, y: note.y, width: note.width, height: note.height }),
+                    body: JSON.stringify({
+                        body: text,
+                        x: geometry.x,
+                        y: geometry.y,
+                        width: geometry.width,
+                        height: geometry.height,
+                    }),
                 });
-                if (res.ok) {
-                    const data = await res.json();
-                    Object.assign(note, data.note);
-                    renderNoteContent(box, note);
-                    // Reset position and border state to server values after save
-                    box.style.left = note.x + '%';
-                    box.style.top = note.y + '%';
-                    box.style.width = note.width + '%';
-                    box.style.height = note.height + '%';
-                    box.dataset.borderState = 'black';
-                    setNoteBorder(box, 'border-black');
-                }
-            } finally {
+                if (!res.ok) return;
+
+                const data = await res.json();
+                Object.assign(note, data.note);
+                renderNoteContent(box, note);
+                setBoxGeometry(box, {
+                    x: note.x,
+                    y: note.y,
+                    width: note.width,
+                    height: note.height,
+                });
+                box.dataset.borderState = 'black';
+                setNoteBorder(box, 'border-black');
                 closeDialog();
+            } catch (err) {
+                // Keep the dialog open when the request cannot be sent.
             }
         });
     }
 
     // Drawing a brand-new note rectangle (admin/uploader only). Matches
     // Danbooru: an empty note is created immediately, then the editor opens.
-    let drawing = false;
-    let drawStart = null;
-    let drawBox = null;
-
     function onDrawMouseDown(e) {
         if (e.target !== layer) return;
 
@@ -987,6 +1237,7 @@ function initPostNotes() {
         drawBox.remove();
         drawBox = null;
         exitDrawMode();
+        suppressNextOutsideClick = true;
 
         if (rectPx.width < 8 || rectPx.height < 8) return;
 
@@ -1036,7 +1287,6 @@ function initPostNotes() {
     renderNotes();
 
     const addNoteBtn = document.getElementById('add-note-btn');
-    let drawModeOn = false;
     addNoteBtn?.addEventListener('click', () => {
         drawModeOn = !drawModeOn;
         if (drawModeOn) {
@@ -1044,6 +1294,16 @@ function initPostNotes() {
         } else {
             exitDrawMode();
         }
+    });
+
+    mediaContainer.addEventListener('click', (e) => {
+        if (suppressNextOutsideClick) {
+            suppressNextOutsideClick = false;
+            return;
+        }
+        if (drawModeOn || drawing || currentDialog || e.target.closest('[data-note-box], [data-note-dialog], [data-note-tooltip], #add-note-btn')) return;
+        notesVisible = !notesVisible;
+        layer.classList.toggle('hidden', !notesVisible);
     });
 }
 
