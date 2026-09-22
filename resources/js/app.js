@@ -778,6 +778,31 @@ function initPostNotes() {
         currentDialogBox = null;
     }
 
+    function repositionTooltip(box) {
+        const tooltip = layer.querySelector(`[data-note-tooltip][data-note-id="${box.dataset.noteId}"]`);
+        if (!tooltip || tooltip.classList.contains('hidden')) return;
+
+        const boxRect = getBoxPixelRect(box);
+        const tooltipRect = tooltip.getBoundingClientRect();
+        const layerRect = layer.getBoundingClientRect();
+
+        let left = boxRect.left;
+        let top = boxRect.bottom + 4;
+
+        if (left + tooltipRect.width > layerRect.width) {
+            left = layerRect.width - tooltipRect.width - 4;
+        }
+        if (left < 4) left = 4;
+
+        if (top + tooltipRect.height > layerRect.height) {
+            top = boxRect.top - tooltipRect.height - 4;
+        }
+        if (top < 4) top = 4;
+
+        tooltip.style.left = left + 'px';
+        tooltip.style.top = top + 'px';
+    }
+
     function repositionDialog() {
         if (!currentDialog || !currentDialogBox) return;
         const boxRect = getBoxPixelRect(currentDialogBox);
@@ -800,13 +825,16 @@ function initPostNotes() {
         if (content) {
             content.innerHTML = '';
         }
-        applyHtmlBackground(box, note.body);
+        // Note box: white and almost transparent
+        box.style.background = 'rgba(255, 255, 255, 0.15)';
 
         const tooltip = box.querySelector('[data-note-tooltip]');
         if (!tooltip) return;
 
         const hasBody = stripTags(note.body).trim() !== '';
         tooltip.innerHTML = hasBody ? note.body : 'Click to edit';
+        // Preview tooltip: apply HTML background color
+        applyHtmlBackground(tooltip, note.body);
     }
 
     function bindDrag(box, note) {
@@ -826,6 +854,7 @@ function initPostNotes() {
             });
             setBoxPixelRect(box, rect);
             repositionDialog();
+            repositionTooltip(box);
         }
 
         function onDragEnd() {
@@ -904,6 +933,7 @@ function initPostNotes() {
                         height: bottom - top,
                     });
                     repositionDialog();
+                    repositionTooltip(box);
                 }
 
                 function onResizeEnd() {
@@ -944,7 +974,8 @@ function initPostNotes() {
         if (canManage || hasBody) {
             const tooltip = document.createElement('div');
             tooltip.dataset.noteTooltip = '';
-            tooltip.className = 'hidden group-hover/note:block absolute z-40 left-0 top-full mt-1 min-w-[8rem] max-w-xs bg-white text-gray-900 text-xs rounded shadow border border-gray-400 px-2 py-1 leading-tight'
+            tooltip.dataset.noteId = note.id;
+            tooltip.className = 'hidden absolute z-40 bg-white text-gray-900 text-xs rounded shadow border border-gray-400 px-2 py-1 leading-tight'
                 + (canManage ? ' cursor-pointer' : '');
             tooltip.innerHTML = hasBody ? note.body : 'Click to edit';
 
@@ -956,7 +987,53 @@ function initPostNotes() {
                 });
             }
 
-            box.appendChild(tooltip);
+            // Position tooltip on hover, keeping it within layer bounds
+            const showTooltip = () => {
+                const boxRect = box.getBoundingClientRect();
+                const layerRect = layer.getBoundingClientRect();
+                const tooltipRect = tooltip.getBoundingClientRect();
+
+                // Default position: below the note box (relative to layer)
+                let left = boxRect.left - layerRect.left;
+                let top = boxRect.bottom - layerRect.top + 4;
+
+                // Check if tooltip would go beyond right edge
+                if (left + tooltipRect.width > layerRect.width) {
+                    left = layerRect.width - tooltipRect.width - 4;
+                }
+                if (left < 4) left = 4;
+
+                // Check if tooltip would go beyond bottom edge
+                if (top + tooltipRect.height > layerRect.height) {
+                    // Show above the box instead
+                    top = boxRect.top - layerRect.top - tooltipRect.height - 4;
+                }
+                if (top < 4) top = 4;
+
+                tooltip.style.left = left + 'px';
+                tooltip.style.top = top + 'px';
+                tooltip.classList.remove('hidden');
+            };
+
+            const hideTooltip = () => {
+                tooltip.classList.add('hidden');
+            };
+
+            // Check if mouse is over box or tooltip
+            const isOverNote = (e) => box.contains(e.target) || tooltip.contains(e.target);
+
+            // Show on box hover
+            box.addEventListener('mouseenter', showTooltip);
+            // Hide when leaving both box and tooltip
+            box.addEventListener('mouseleave', (e) => {
+                if (!isOverNote(e)) hideTooltip();
+            });
+            tooltip.addEventListener('mouseenter', showTooltip);
+            tooltip.addEventListener('mouseleave', (e) => {
+                if (!isOverNote(e)) hideTooltip();
+            });
+
+            layer.appendChild(tooltip);
         }
 
         if (canManage) {
@@ -984,6 +1061,8 @@ function initPostNotes() {
                 return;
             }
             notes = notes.filter((n) => n.id !== note.id);
+            // Remove associated tooltip
+            layer.querySelector(`[data-note-tooltip][data-note-id="${note.id}"]`)?.remove();
             box.remove();
         } catch (err) {
             // Leave the note in place if deletion failed.
