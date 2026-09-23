@@ -28,10 +28,12 @@ Route::post('/posts/{post}/favorite', [FavoriteController::class, 'toggle'])->na
 Route::get('/favorites', [FavoriteController::class, 'index'])->name('favorites.index')->middleware('auth');
 Route::post('/comments/upload-image', [CommentController::class, 'uploadImage'])->name('comments.upload-image')->middleware('auth');
 Route::get('/comments', [CommentsPageController::class, 'index'])->name('comments.index');
+Route::get('/comments/search', [CommentsPageController::class, 'search'])->name('comments.search');
 Route::get('/wiki/{tag:name}', [TagController::class, 'wiki'])->name('tags.wiki');
 Route::get('/tags/autocomplete', [TagController::class, 'autocomplete'])->name('tags.autocomplete');
 
 Route::get('/notes', [NoteController::class, 'index'])->name('notes.index');
+Route::get('/notes/changes', [NoteController::class, 'changes'])->name('notes.changes');
 Route::post('/posts/{post}/notes', [NoteController::class, 'store'])->name('notes.store')->middleware('auth');
 Route::post('/notes/preview', [NoteController::class, 'previewBody'])->name('notes.preview')->middleware('auth');
 Route::put('/notes/{note}', [NoteController::class, 'update'])->name('notes.update')->middleware('auth');

@@ -47,4 +47,11 @@ class CommentsPageController extends Controller
             'votedComments' => session('voted_comments', []),
         ]);
     }
+
+    public function search(Request $request)
+    {
+        return view('comments.search', [
+            'filters' => $request->only(['commenter', 'text', 'tags', 'score', 'order']),
+        ]);
+    }
 }

@@ -1198,12 +1198,13 @@ function initPostNotes() {
             <div data-edit-container>
                 <textarea data-textarea class="w-full flex-1 px-2 py-1.5 rounded border border-sky-500 bg-white text-gray-900 text-xs resize-none" spellcheck="false"></textarea>
             </div>
+            <div data-history-container class="hidden max-h-48 overflow-y-auto space-y-1.5 pr-0.5"></div>
             <div class="flex flex-wrap gap-1.5 mt-2">
                 <button type="button" data-save class="px-2 py-1 rounded bg-green-700 hover:bg-green-800 text-white cursor-pointer">Save</button>
                 <button type="button" data-preview-btn class="px-2 py-1 rounded bg-gray-700 hover:bg-gray-600 text-white cursor-pointer">Preview</button>
                 <button type="button" data-cancel class="px-2 py-1 rounded bg-gray-700 hover:bg-gray-600 text-white cursor-pointer">Cancel</button>
                 <button type="button" data-delete class="px-2 py-1 rounded bg-red-800 hover:bg-red-900 text-white cursor-pointer">Delete</button>
-                <a href="/notes/${note.id}/history" target="_blank" rel="noopener" data-history class="px-2 py-1 rounded bg-gray-700 hover:bg-gray-600 text-white cursor-pointer inline-block">History</a>
+                <button type="button" data-history class="px-2 py-1 rounded bg-gray-700 hover:bg-gray-600 text-white cursor-pointer">History</button>
             </div>
         `;
 
@@ -1354,6 +1355,91 @@ function initPostNotes() {
                 await showHoverPreview();
             } else {
                 hideHoverPreview();
+            }
+        });
+
+        // History is shown inline inside the same dialog instead of
+        // navigating to a separate page: the History button swaps the
+        // textarea/action row for a small scrollable list of past
+        // versions, fetched in place, and toggles back to editing on a
+        // second click.
+        const historyBtn = dialog.querySelector('[data-history]');
+        const editContainer = dialog.querySelector('[data-edit-container]');
+        const historyContainer = dialog.querySelector('[data-history-container]');
+        const saveBtn = dialog.querySelector('[data-save]');
+        const cancelBtn = dialog.querySelector('[data-cancel]');
+        const deleteBtn = dialog.querySelector('[data-delete]');
+        let historyOn = false;
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;',
+            }[char]));
+        }
+
+        function renderHistoryVersions(versions) {
+            if (!versions.length) {
+                historyContainer.innerHTML = '<p class="text-gray-400 px-1 py-2">No history yet.</p>';
+                return;
+            }
+
+            historyContainer.innerHTML = versions.map((version) => {
+                const bodyText = stripTags(version.body || '').trim() || '(empty)';
+                const updater = version.updater
+                    ? (version.updater_url
+                        ? `<a href="${version.updater_url}" target="_blank" rel="noopener" class="text-sky-400 hover:underline">${escapeHtml(version.updater)}</a>`
+                        : escapeHtml(version.updater))
+                    : '<span class="text-gray-500">Anonymous</span>';
+
+                return `
+                    <div class="border border-gray-700 rounded px-2 py-1.5">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="font-semibold">v${version.version}${version.is_new ? ' <span class="text-green-400">(new)</span>' : ''}</span>
+                            <span class="text-gray-400">${escapeHtml(version.created_at)}</span>
+                        </div>
+                        <div class="text-gray-300 truncate" title="${escapeHtml(bodyText)}">${escapeHtml(bodyText)}</div>
+                        <div class="text-gray-500">by ${updater}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function loadHistory() {
+            historyContainer.innerHTML = '<p class="text-gray-400 px-1 py-2">Loading history…</p>';
+            try {
+                const res = await fetch(`/notes/${note.id}/history`, {
+                    headers: { 'Accept': 'application/json' },
+                });
+                if (!res.ok) {
+                    historyContainer.innerHTML = '<p class="text-red-400 px-1 py-2">Failed to load history.</p>';
+                    return;
+                }
+                const data = await res.json();
+                renderHistoryVersions(data.versions || []);
+            } catch (err) {
+                historyContainer.innerHTML = '<p class="text-red-400 px-1 py-2">Failed to load history.</p>';
+            }
+        }
+
+        historyBtn.addEventListener('click', async () => {
+            historyOn = !historyOn;
+            historyBtn.textContent = historyOn ? 'Back to edit' : 'History';
+
+            editContainer.classList.toggle('hidden', historyOn);
+            historyContainer.classList.toggle('hidden', !historyOn);
+            [saveBtn, previewBtn, cancelBtn, deleteBtn].forEach((btn) => btn.classList.toggle('hidden', historyOn));
+
+            if (historyOn) {
+                if (previewOn) {
+                    previewOn = false;
+                    previewBtn.textContent = 'Preview';
+                    hideHoverPreview();
+                }
+                await loadHistory();
             }
         });
 

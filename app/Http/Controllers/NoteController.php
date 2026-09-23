@@ -104,11 +104,41 @@ class NoteController extends Controller
         ]);
     }
 
-    public function history(Note $note)
+    public function changes(Request $request)
+    {
+        $query = NoteVersion::query()->with(['note.post', 'updater'])->latest('id');
+
+        $versions = $query->paginate(25)->withQueryString();
+
+        return view('notes.changes', [
+            'versions' => $versions,
+        ]);
+    }
+
+    public function history(Request $request, Note $note)
     {
         $note->load('post');
 
         $versions = $note->versions()->with('updater')->paginate(25);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'note' => [
+                    'id' => $note->id,
+                    'post_id' => $note->post_id,
+                ],
+                'versions' => $versions->getCollection()->map(fn (NoteVersion $version) => [
+                    'version' => $version->version,
+                    'body' => $version->body,
+                    'is_new' => $version->is_new,
+                    'updater' => $version->updater?->name,
+                    'updater_url' => $version->updater ? route('users.show', $version->updater) : null,
+                    'created_at' => $version->created_at->format('Y-m-d H:i'),
+                ])->values(),
+                'current_page' => $versions->currentPage(),
+                'last_page' => $versions->lastPage(),
+            ]);
+        }
 
         return view('notes.history', [
             'note' => $note,

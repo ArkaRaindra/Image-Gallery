@@ -14,8 +14,8 @@
     @php
         $isAuthSection = request()->routeIs('login') || request()->routeIs('register');
         $isAccountSection = request()->routeIs('account.*');
-        $isCommentsSection = request()->routeIs('comments.index');
-        $isNotesSection = request()->routeIs('notes.index');
+        $isCommentsSection = request()->routeIs('comments.index') || request()->routeIs('comments.search');
+        $isNotesSection = request()->routeIs('notes.index') || request()->routeIs('notes.changes');
     @endphp
     <header class="bg-gallery-green border-b border-green-800">
         <div class="w-full px-6 py-2 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm font-medium">
@@ -62,18 +62,22 @@
                     </form>
                 @elseif ($isCommentsSection)
                     <a href="{{ route('comments.index') }}"
-                        class="hover:text-gray-200 cursor-pointer font-bold text-gray-200">Comments</a>
+                        class="hover:text-gray-200 cursor-pointer {{ request()->routeIs('comments.index') ? 'font-bold text-gray-200' : '' }}">Comments</a>
                     @auth
                         <a href="{{ route('comments.index', ['on_my_uploads' => 1]) }}"
                             class="hover:text-gray-200 cursor-pointer">On My Uploads</a>
                     @else
                         <span class="cursor-not-allowed">On My Uploads</span>
                     @endauth
-                    <span class="cursor-not-allowed">Search</span>
+                    <a href="{{ route('comments.search') }}"
+                        class="hover:text-gray-200 cursor-pointer {{ request()->routeIs('comments.search') ? 'font-bold text-gray-200' : '' }}">Search</a>
                     <span class="cursor-not-allowed">Help</span>
                 @elseif ($isNotesSection)
                     <a href="{{ route('notes.index') }}"
-                        class="hover:text-gray-200 cursor-pointer font-bold text-gray-200">Notes</a>
+                        class="hover:text-gray-200 cursor-pointer {{ request()->routeIs('notes.index') ? 'font-bold text-gray-200' : '' }}">Notes</a>
+                    <a href="{{ route('posts.index') }}" class="hover:text-gray-200 cursor-pointer">Posts</a>
+                    <a href="{{ route('notes.changes') }}"
+                        class="hover:text-gray-200 cursor-pointer {{ request()->routeIs('notes.changes') ? 'font-bold text-gray-200' : '' }}">Changes</a>
                     <span class="cursor-not-allowed">Help</span>
                 @else
                     <a href="{{ route('posts.index') }}"
