@@ -118,111 +118,6 @@
     margin-top: 0.125rem !important;
 }
 
-/* Preview container in edit dialog - mirror tooltip styles for proper HTML rendering */
-[data-preview-container] {
-    font-size: 0.75rem !important;
-    line-height: 1.25rem !important;
-}
-
-[data-preview-container] h1 {
-    font-size: 1.25rem !important;
-    font-weight: 700 !important;
-    margin-top: 0.5rem !important;
-    margin-bottom: 0.25rem !important;
-}
-
-[data-preview-container] h2 {
-    font-size: 1.125rem !important;
-    font-weight: 700 !important;
-    margin-top: 0.4375rem !important;
-    margin-bottom: 0.21875rem !important;
-}
-
-[data-preview-container] h3 {
-    font-size: 1rem !important;
-    font-weight: 700 !important;
-    margin-top: 0.375rem !important;
-    margin-bottom: 0.1875rem !important;
-}
-
-[data-preview-container] h4 {
-    font-size: 0.9375rem !important;
-    font-weight: 700 !important;
-    margin-top: 0.3125rem !important;
-    margin-bottom: 0.15625rem !important;
-}
-
-[data-preview-container] h5 {
-    font-size: 0.875rem !important;
-    font-weight: 700 !important;
-    margin-top: 0.25rem !important;
-    margin-bottom: 0.125rem !important;
-}
-
-[data-preview-container] h6 {
-    font-size: 0.8125rem !important;
-    font-weight: 700 !important;
-    margin-top: 0.1875rem !important;
-    margin-bottom: 0.09375rem !important;
-}
-
-[data-preview-container] p {
-    margin: 0.125rem 0 !important;
-}
-
-[data-preview-container] ul,
-[data-preview-container] ol {
-    margin: 0.125rem 0 !important;
-    padding-left: 1rem !important;
-}
-
-[data-preview-container] li {
-    margin: 0 !important;
-}
-
-[data-preview-container] a {
-    color: #0284c7 !important;
-    text-decoration: underline !important;
-}
-
-[data-preview-container] a:hover {
-    color: #0369a1 !important;
-}
-
-[data-preview-container] b,
-[data-preview-container] strong {
-    font-weight: 700 !important;
-}
-
-[data-preview-container] i,
-[data-preview-container] em {
-    font-style: italic !important;
-}
-
-[data-preview-container] u {
-    text-decoration: underline !important;
-}
-
-[data-preview-container] s,
-[data-preview-container] strike,
-[data-preview-container] del {
-    text-decoration: line-through !important;
-}
-
-[data-preview-container] code {
-    background-color: #e5e7eb !important;
-    color: #1f2937 !important;
-    padding: 0 0.125rem !important;
-    border-radius: 0.125rem !important;
-    font-size: 0.7rem !important;
-}
-
-[data-preview-container] br {
-    display: block !important;
-    content: '' !important;
-    margin-top: 0.125rem !important;
-}
-
 [data-note-box],
 [data-note-preview],
 .note-content,
@@ -290,8 +185,10 @@
 }
 
 [data-note-dialog] > div:first-child {
+    /* This is the dialog's drag handle (data-dialog-header), so unlike the
+       footer below it needs pointer events on itself, not just its children. */
     flex-shrink: 0;
-    pointer-events: none;
+    pointer-events: auto;
 }
 
 [data-note-dialog] > div:first-child > * {

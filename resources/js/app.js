@@ -832,6 +832,9 @@ function initPostNotes() {
                     tooltipHideTimers.delete(tooltip);
                 }
             } else if (!overTooltip) {
+                // While the edit dialog's Preview button is showing this
+                // tooltip on purpose, real cursor position shouldn't close it.
+                if (tooltip.dataset.previewForced === '1') return;
                 // Cursor is not over box or tooltip - start hide timer if not already pending
                 if (!tooltip.classList.contains('hidden') && !tooltipHideTimers.has(tooltip)) {
                     const timer = setTimeout(() => {
@@ -882,8 +885,24 @@ function initPostNotes() {
         box.classList.add(color);
     }
 
+    // While the edit dialog's Preview button is on, the note's normal hover
+    // tooltip is forced open and filled with the (unsaved) preview HTML
+    // instead of the saved note body — see openEditDialog(). This restores
+    // that tooltip back to showing the real, saved note content and lets
+    // hover-tracking own its visibility again.
+    function clearForcedPreview(tooltip) {
+        if (!tooltip || tooltip.dataset.previewForced !== '1') return;
+        delete tooltip.dataset.previewForced;
+        const noteId = tooltip.dataset.noteId;
+        const relatedNote = notes.find((n) => String(n.id) === String(noteId));
+        const relatedBox = layer.querySelector(`[data-note-box][data-note-id="${noteId}"]`);
+        if (relatedNote && relatedBox) renderNoteContent(relatedBox, relatedNote);
+        tooltip.classList.add('hidden');
+    }
+
     function closeAnyOpenDialog() {
-        layer.querySelectorAll('[data-note-dialog]').forEach((el) => el.remove());
+        layer.querySelectorAll('[data-note-tooltip][data-preview-forced="1"]').forEach(clearForcedPreview);
+        document.querySelectorAll('[data-note-dialog]').forEach((el) => el.remove());
         currentDialog = null;
         currentDialogBox = null;
     }
@@ -911,23 +930,6 @@ function initPostNotes() {
 
         tooltip.style.left = left + 'px';
         tooltip.style.top = top + 'px';
-    }
-
-    function repositionDialog() {
-        if (!currentDialog || !currentDialogBox) return;
-        const boxRect = getBoxPixelRect(currentDialogBox);
-        const gap = 6;
-        const dialogWidth = currentDialog.offsetWidth || 288;
-        const dialogHeight = currentDialog.offsetHeight || 240;
-        let dialogLeft = boxRect.left;
-        let dialogTop = boxRect.top + boxRect.height + gap;
-        if (dialogTop + dialogHeight > layer.clientHeight) {
-            dialogTop = boxRect.top - dialogHeight - gap;
-        }
-        dialogLeft = clamp(dialogLeft, 0, Math.max(0, layer.clientWidth - dialogWidth));
-        dialogTop = clamp(dialogTop, 0, Math.max(0, layer.clientHeight - dialogHeight));
-        currentDialog.style.left = dialogLeft + 'px';
-        currentDialog.style.top = dialogTop + 'px';
     }
 
     function renderNoteContent(box, note) {
@@ -963,7 +965,6 @@ function initPostNotes() {
                 height: startRect.height,
             });
             setBoxPixelRect(box, rect);
-            repositionDialog();
             repositionTooltip(box);
         }
 
@@ -1042,7 +1043,6 @@ function initPostNotes() {
                         width: right - left,
                         height: bottom - top,
                     });
-                    repositionDialog();
                     repositionTooltip(box);
                 }
 
@@ -1161,39 +1161,42 @@ function initPostNotes() {
 
     // The five-button editor dialog (Save / Preview / Cancel / Delete / History),
     // matching https://danbooru.donmai.us/wiki_pages/help:notes.
+    // The editor dialog is a free-floating panel pinned to the page's
+    // viewport (not anchored to the note itself), so it opens on the right
+    // side of the page and can be dragged (by its header) or resized (by
+    // its corner handles) to anywhere the user wants, independent of where
+    // the note sits on the image.
     function openEditDialog(note, box, { isNew = false } = {}) {
         closeAnyOpenDialog();
 
         const dialog = document.createElement('div');
         dialog.dataset.noteDialog = '';
-        dialog.className = 'absolute z-50 w-72 min-w-[16rem] min-h-[12rem] max-w-full max-h-full overflow-auto bg-gray-900 text-gray-100 border border-gray-600 rounded shadow-2xl p-3 text-xs';
-        layer.appendChild(dialog);
+        dialog.className = 'fixed z-50 w-80 min-w-[16rem] min-h-[12rem] max-w-full max-h-full overflow-auto bg-gray-900 text-gray-100 border border-gray-600 rounded shadow-2xl p-3 text-xs';
+        document.body.appendChild(dialog);
 
-        const boxRect = getBoxPixelRect(box);
-        const gap = 6;
-        let dialogLeft = boxRect.left;
-        let dialogTop = boxRect.top + boxRect.height + gap;
-        const dialogWidth = dialog.offsetWidth || 288;
-        const dialogHeight = dialog.offsetHeight || 240;
-        if (dialogTop + dialogHeight > layer.clientHeight) {
-            dialogTop = boxRect.top - dialogHeight - gap;
-        }
-        dialogLeft = clamp(dialogLeft, 0, Math.max(0, layer.clientWidth - dialogWidth));
-        dialogTop = clamp(dialogTop, 0, Math.max(0, layer.clientHeight - dialogHeight));
+        // Default spawn position: right side of the page, vertically
+        // centered, clamped inside the viewport. The user can drag/resize
+        // it anywhere afterwards.
+        const margin = 16;
+        const dialogWidth = 320;
+        const dialogHeight = 260;
+        const dialogLeft = clamp(window.innerWidth - dialogWidth - margin, margin, Math.max(margin, window.innerWidth - dialogWidth - margin));
+        const dialogTop = clamp((window.innerHeight - dialogHeight) / 2, margin, Math.max(margin, window.innerHeight - dialogHeight - margin));
         dialog.style.left = dialogLeft + 'px';
         dialog.style.top = dialogTop + 'px';
+        dialog.style.width = dialogWidth + 'px';
+        dialog.style.height = dialogHeight + 'px';
 
         currentDialog = dialog;
         currentDialogBox = box;
 
         dialog.innerHTML = `
-            <div class="flex items-center justify-between mb-2 gap-2">
+            <div data-dialog-header class="flex items-center justify-between mb-2 gap-2 cursor-move select-none">
                 <span class="font-semibold">Editing note #${note.id} (<a href="https://danbooru.donmai.us/wiki_pages/help:notes" target="_blank" rel="noopener" class="text-sky-400 hover:underline font-normal">view help</a>)</span>
                 <button type="button" data-close class="text-gray-400 hover:text-white cursor-pointer shrink-0">×</button>
             </div>
             <div data-edit-container>
                 <textarea data-textarea class="w-full flex-1 px-2 py-1.5 rounded border border-sky-500 bg-white text-gray-900 text-xs resize-none" spellcheck="false"></textarea>
-                <div data-preview-container class="hidden w-full flex-1 px-2 py-1.5 rounded border border-sky-500 bg-white text-gray-900 text-xs overflow-auto"></div>
             </div>
             <div class="flex flex-wrap gap-1.5 mt-2">
                 <button type="button" data-save class="px-2 py-1 rounded bg-green-700 hover:bg-green-800 text-white cursor-pointer">Save</button>
@@ -1206,7 +1209,38 @@ function initPostNotes() {
 
         dialog.addEventListener('mousedown', (e) => e.stopPropagation());
 
-        // Add resize handles to dialog
+        // Free dragging via the header (anywhere on the page, not just next
+        // to the note).
+        const header = dialog.querySelector('[data-dialog-header]');
+        header.addEventListener('mousedown', (e) => {
+            if (e.target.closest('[data-close]')) return;
+            e.preventDefault();
+
+            const startLeft = dialog.offsetLeft;
+            const startTop = dialog.offsetTop;
+            const startX = e.clientX;
+            const startY = e.clientY;
+            let dragging = true;
+
+            function onDragMove(event) {
+                if (!dragging) return;
+                const left = clamp(startLeft + (event.clientX - startX), 0, Math.max(0, window.innerWidth - dialog.offsetWidth));
+                const top = clamp(startTop + (event.clientY - startY), 0, Math.max(0, window.innerHeight - dialog.offsetHeight));
+                dialog.style.left = left + 'px';
+                dialog.style.top = top + 'px';
+            }
+
+            function onDragEnd() {
+                dragging = false;
+                document.removeEventListener('mousemove', onDragMove);
+                document.removeEventListener('mouseup', onDragEnd);
+            }
+
+            document.addEventListener('mousemove', onDragMove, { passive: true });
+            document.addEventListener('mouseup', onDragEnd);
+        });
+
+        // Free resizing via the corner handles, clamped to the viewport.
         const minDialogWidth = 256;
         const minDialogHeight = 192;
         ['nw', 'ne', 'sw', 'se'].forEach((direction) => {
@@ -1242,13 +1276,13 @@ function initPostNotes() {
                         left = Math.max(0, Math.min(startLeft + deltaX, right - minDialogWidth));
                     }
                     if (direction.includes('e')) {
-                        right = Math.min(layer.clientWidth, Math.max(startLeft + startWidth + deltaX, left + minDialogWidth));
+                        right = Math.min(window.innerWidth, Math.max(startLeft + startWidth + deltaX, left + minDialogWidth));
                     }
                     if (direction.includes('n')) {
                         top = Math.max(0, Math.min(startTop + deltaY, bottom - minDialogHeight));
                     }
                     if (direction.includes('s')) {
-                        bottom = Math.min(layer.clientHeight, Math.max(startTop + startHeight + deltaY, top + minDialogHeight));
+                        bottom = Math.min(window.innerHeight, Math.max(startTop + startHeight + deltaY, top + minDialogHeight));
                     }
 
                     dialog.style.left = left + 'px';
@@ -1270,15 +1304,29 @@ function initPostNotes() {
         });
 
         const textarea = dialog.querySelector('[data-textarea]');
-        const previewContainer = dialog.querySelector('[data-preview-container]');
         textarea.value = note.body || '';
         textarea.focus();
 
+        // Preview no longer swaps the textarea for a rendered HTML block
+        // inside the dialog. Instead it shows the note's own hover popup
+        // (the exact same element/markup a viewer sees when hovering the
+        // note on the image), forced open and filled with the current,
+        // unsaved textarea contents — so it looks exactly like what other
+        // viewers will see once this is saved.
         const previewBtn = dialog.querySelector('[data-preview-btn]');
         let previewOn = false;
 
-        async function updatePreview() {
-            previewContainer.innerHTML = '<span class="text-gray-400">Loading preview…</span>';
+        function getTooltipForBox() {
+            return layer.querySelector(`[data-note-tooltip][data-note-id="${box.dataset.noteId}"]`);
+        }
+
+        async function showHoverPreview() {
+            const tooltip = getTooltipForBox();
+            if (!tooltip) return;
+            tooltip.dataset.previewForced = '1';
+            tooltip.innerHTML = '<span class="text-gray-400">Loading preview…</span>';
+            tooltip.classList.remove('hidden');
+            positionNoteTooltip(box, tooltip);
             try {
                 const res = await fetch('/notes/preview', {
                     method: 'POST',
@@ -1287,39 +1335,40 @@ function initPostNotes() {
                 });
                 const data = await res.json();
                 const html = data.html || '';
-                previewContainer.innerHTML = html || '<span class="text-gray-400">Nothing to preview.</span>';
-                applyHtmlBackground(previewContainer, html);
+                tooltip.innerHTML = html || '<span class="text-gray-400">Nothing to preview.</span>';
+                applyHtmlBackground(tooltip, html);
+                positionNoteTooltip(box, tooltip);
             } catch (err) {
-                previewContainer.innerHTML = '<span class="text-red-600">Preview failed.</span>';
+                tooltip.innerHTML = '<span class="text-red-600">Preview failed.</span>';
             }
+        }
+
+        function hideHoverPreview() {
+            clearForcedPreview(getTooltipForBox());
         }
 
         previewBtn.addEventListener('click', async () => {
             previewOn = !previewOn;
-            textarea.classList.toggle('hidden', previewOn);
-            previewContainer.classList.toggle('hidden', !previewOn);
-            previewBtn.textContent = previewOn ? 'Edit' : 'Preview';
-            if (previewOn) await updatePreview();
+            previewBtn.textContent = previewOn ? 'Hide preview' : 'Preview';
+            if (previewOn) {
+                await showHoverPreview();
+            } else {
+                hideHoverPreview();
+            }
         });
-
-        function closeDialog() {
-            dialog.remove();
-            currentDialog = null;
-            currentDialogBox = null;
-        }
 
         dialog.querySelector('[data-close]').addEventListener('click', () => cancelEdit());
         dialog.querySelector('[data-cancel]').addEventListener('click', () => cancelEdit());
 
         function cancelEdit() {
-            closeDialog();
+            closeAnyOpenDialog();
             if (isNew) {
                 deleteNote(note, box, { silent: true });
             }
         }
 
         dialog.querySelector('[data-delete]').addEventListener('click', () => {
-            closeDialog();
+            closeAnyOpenDialog();
             deleteNote(note, box);
         });
 
@@ -1352,7 +1401,7 @@ function initPostNotes() {
                 });
                 box.dataset.borderState = 'black';
                 setNoteBorder(box, 'border-black');
-                closeDialog();
+                closeAnyOpenDialog();
             } catch (err) {
                 // Keep the dialog open when the request cannot be sent.
             }
