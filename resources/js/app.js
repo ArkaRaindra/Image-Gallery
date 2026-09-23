@@ -758,7 +758,85 @@ function initPostNotes() {
         layer.style.width = box.width + 'px';
         layer.style.height = box.height + 'px';
         layer.classList.toggle('hidden', !notesVisible);
+        // Any tooltip left visible from before this (re)layout is now
+        // positioned against stale coordinates — hide it; a genuine hover
+        // afterwards will show it again correctly positioned.
+        layer.querySelectorAll('[data-note-tooltip]:not(.hidden)').forEach((tooltip) => {
+            tooltip.classList.add('hidden');
+        });
     }
+
+    function pointInRect(x, y, rect) {
+        return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+    }
+
+    function positionNoteTooltip(box, tooltip) {
+        const boxRect = box.getBoundingClientRect();
+        const layerRect = layer.getBoundingClientRect();
+        const tooltipRect = tooltip.getBoundingClientRect();
+
+        // Default position: below the note box (relative to layer)
+        let left = boxRect.left - layerRect.left;
+        let top = boxRect.bottom - layerRect.top + 4;
+
+        if (left + tooltipRect.width > layerRect.width) {
+            left = layerRect.width - tooltipRect.width - 4;
+        }
+        if (left < 4) left = 4;
+
+        if (top + tooltipRect.height > layerRect.height) {
+            top = boxRect.top - layerRect.top - tooltipRect.height - 4;
+        }
+        if (top < 4) top = 4;
+
+        tooltip.style.left = left + 'px';
+        tooltip.style.top = top + 'px';
+    }
+
+    // Continuously reconciles every note preview's visibility against the
+    // cursor's actual, current position, instead of relying on mouseenter/
+    // mouseleave pairs. This is what actually fixes both reported bugs:
+    //   - a preview can never get stuck open, because every real mousemove
+    //     re-checks whether the cursor genuinely is still over its box or
+    //     tooltip, and closes it the instant it isn't;
+    //   - a preview can never appear on page load/refresh before the user
+    //     touches the mouse, because this only ever runs inside a real
+    //     'mousemove' handler — it's never invoked by DOM insertion, layout,
+    //     or any other non-input trigger.
+    function trackNoteHover(clientX, clientY) {
+        layer.querySelectorAll('[data-note-box]').forEach((box) => {
+            const tooltip = layer.querySelector(`[data-note-tooltip][data-note-id="${box.dataset.noteId}"]`);
+            if (!tooltip) return;
+
+            const overBox = pointInRect(clientX, clientY, box.getBoundingClientRect());
+            // A hidden tooltip has a 0x0 rect at (0,0), which pointInRect
+            // only matches for a cursor literally at the viewport's top-left
+            // corner — so this check is always safe, hidden or not.
+            const overTooltip = pointInRect(clientX, clientY, tooltip.getBoundingClientRect());
+
+            if (overBox) {
+                positionNoteTooltip(box, tooltip);
+                tooltip.classList.remove('hidden');
+            } else if (!overTooltip) {
+                tooltip.classList.add('hidden');
+            }
+        });
+    }
+
+    function hideAllNoteTooltips() {
+        layer.querySelectorAll('[data-note-tooltip]:not(.hidden)').forEach((tooltip) => {
+            tooltip.classList.add('hidden');
+        });
+    }
+
+    document.addEventListener('mousemove', (e) => {
+        trackNoteHover(e.clientX, e.clientY);
+    }, { passive: true });
+    // mousemove stops firing once the cursor leaves the browser viewport, so
+    // a note left open right at the edge would otherwise never get the
+    // chance to close.
+    document.documentElement.addEventListener('mouseleave', hideAllNoteTooltips);
+    window.addEventListener('blur', hideAllNoteTooltips);
 
     // Border color state machine: clicking always turns the border blue while
     // the note is being dragged. When the drag ends, the border becomes
@@ -987,53 +1065,19 @@ function initPostNotes() {
                 });
             }
 
-            // Position tooltip on hover, keeping it within layer bounds
-            const showTooltip = () => {
-                const boxRect = box.getBoundingClientRect();
-                const layerRect = layer.getBoundingClientRect();
-                const tooltipRect = tooltip.getBoundingClientRect();
-
-                // Default position: below the note box (relative to layer)
-                let left = boxRect.left - layerRect.left;
-                let top = boxRect.bottom - layerRect.top + 4;
-
-                // Check if tooltip would go beyond right edge
-                if (left + tooltipRect.width > layerRect.width) {
-                    left = layerRect.width - tooltipRect.width - 4;
-                }
-                if (left < 4) left = 4;
-
-                // Check if tooltip would go beyond bottom edge
-                if (top + tooltipRect.height > layerRect.height) {
-                    // Show above the box instead
-                    top = boxRect.top - layerRect.top - tooltipRect.height - 4;
-                }
-                if (top < 4) top = 4;
-
-                tooltip.style.left = left + 'px';
-                tooltip.style.top = top + 'px';
-                tooltip.classList.remove('hidden');
-            };
-
-            const hideTooltip = () => {
-                tooltip.classList.add('hidden');
-            };
-
-            // Check if mouse is over box or tooltip
-            const isOverNote = (e) => box.contains(e.target) || tooltip.contains(e.target);
-
-            // Show on box hover
-            box.addEventListener('mouseenter', showTooltip);
-            // Hide when leaving both box and tooltip
-            box.addEventListener('mouseleave', (e) => {
-                if (!isOverNote(e)) hideTooltip();
-            });
-            tooltip.addEventListener('mouseenter', showTooltip);
-            tooltip.addEventListener('mouseleave', (e) => {
-                if (!isOverNote(e)) hideTooltip();
-            });
+            // Visibility is driven entirely by trackNoteHover() below, which
+            // re-checks every note against the real cursor position on every
+            // genuine mousemove — not by mouseenter/mouseleave pairs on the
+            // box/tooltip. That per-element approach was fragile: mouseleave
+            // reports e.target as the element the listener is bound to (not
+            // the element being entered), and some browsers also fire a
+            // trusted mouseenter the instant a note box appears under an
+            // already-stationary cursor (e.g. right after page load), before
+            // any real mouse movement. A single continuous, real-time check
+            // can't get stuck open and can't fire before real movement.
 
             layer.appendChild(tooltip);
+
         }
 
         if (canManage) {
@@ -1045,7 +1089,11 @@ function initPostNotes() {
     }
 
     function renderNotes() {
-        layer.querySelectorAll('[data-note-box]').forEach((el) => el.remove());
+        // Tooltips are appended as siblings of their note box (not children),
+        // so they must be cleared explicitly too — otherwise a tooltip that
+        // was visible at re-render time is orphaned and stays stuck on screen
+        // forever, even after the mouse has left.
+        layer.querySelectorAll('[data-note-box], [data-note-tooltip]').forEach((el) => el.remove());
         notes.forEach((note) => layer.appendChild(buildNoteBox(note)));
     }
 

@@ -10,9 +10,7 @@
     --color-gallery-green: #9AE598;
 }
 
-/* Note tooltip typography: ensure all HTML tags render with sensible
-   sizes inside the small hover popup (which defaults to text-xs). */
-[data-note-tooltip] {
+[data-note-tooltip]:not(.hidden) {
     font-size: 0.75rem !important;
     line-height: 1.25rem !important;
     min-width: unset !important;
