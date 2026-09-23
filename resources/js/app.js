@@ -761,6 +761,8 @@ function initPostNotes() {
         // Any tooltip left visible from before this (re)layout is now
         // positioned against stale coordinates — hide it; a genuine hover
         // afterwards will show it again correctly positioned.
+        tooltipHideTimers.forEach((timer) => clearTimeout(timer));
+        tooltipHideTimers.clear();
         layer.querySelectorAll('[data-note-tooltip]:not(.hidden)').forEach((tooltip) => {
             tooltip.classList.add('hidden');
         });
@@ -803,6 +805,12 @@ function initPostNotes() {
     //     touches the mouse, because this only ever runs inside a real
     //     'mousemove' handler — it's never invoked by DOM insertion, layout,
     //     or any other non-input trigger.
+    //
+    // Tooltip hide delay: when the cursor leaves both the note box and its
+    // tooltip, wait 1 second before actually hiding it. This gives users a
+    // brief grace period to move the cursor between the box and tooltip.
+    const tooltipHideTimers = new Map();
+
     function trackNoteHover(clientX, clientY) {
         layer.querySelectorAll('[data-note-box]').forEach((box) => {
             const tooltip = layer.querySelector(`[data-note-tooltip][data-note-id="${box.dataset.noteId}"]`);
@@ -817,13 +825,37 @@ function initPostNotes() {
             if (overBox) {
                 positionNoteTooltip(box, tooltip);
                 tooltip.classList.remove('hidden');
+                // Cancel any pending hide timer since we're back over the box
+                const timer = tooltipHideTimers.get(tooltip);
+                if (timer) {
+                    clearTimeout(timer);
+                    tooltipHideTimers.delete(tooltip);
+                }
             } else if (!overTooltip) {
-                tooltip.classList.add('hidden');
+                // Cursor is not over box or tooltip - start hide timer if not already pending
+                if (!tooltip.classList.contains('hidden') && !tooltipHideTimers.has(tooltip)) {
+                    const timer = setTimeout(() => {
+                        tooltip.classList.add('hidden');
+                        tooltipHideTimers.delete(tooltip);
+                    }, 1000);
+                    tooltipHideTimers.set(tooltip, timer);
+                }
+            } else if (overTooltip) {
+                // Cursor is over tooltip but not box - cancel any pending hide timer
+                const timer = tooltipHideTimers.get(tooltip);
+                if (timer) {
+                    clearTimeout(timer);
+                    tooltipHideTimers.delete(tooltip);
+                }
             }
         });
     }
 
     function hideAllNoteTooltips() {
+        // Clear any pending hide timers
+        tooltipHideTimers.forEach((timer) => clearTimeout(timer));
+        tooltipHideTimers.clear();
+
         layer.querySelectorAll('[data-note-tooltip]:not(.hidden)').forEach((tooltip) => {
             tooltip.classList.add('hidden');
         });
@@ -1093,6 +1125,8 @@ function initPostNotes() {
         // so they must be cleared explicitly too — otherwise a tooltip that
         // was visible at re-render time is orphaned and stays stuck on screen
         // forever, even after the mouse has left.
+        tooltipHideTimers.forEach((timer) => clearTimeout(timer));
+        tooltipHideTimers.clear();
         layer.querySelectorAll('[data-note-box], [data-note-tooltip]').forEach((el) => el.remove());
         notes.forEach((note) => layer.appendChild(buildNoteBox(note)));
     }
@@ -1110,7 +1144,15 @@ function initPostNotes() {
             }
             notes = notes.filter((n) => n.id !== note.id);
             // Remove associated tooltip
-            layer.querySelector(`[data-note-tooltip][data-note-id="${note.id}"]`)?.remove();
+            const tooltip = layer.querySelector(`[data-note-tooltip][data-note-id="${note.id}"]`);
+            if (tooltip) {
+                const timer = tooltipHideTimers.get(tooltip);
+                if (timer) {
+                    clearTimeout(timer);
+                    tooltipHideTimers.delete(tooltip);
+                }
+                tooltip.remove();
+            }
             box.remove();
         } catch (err) {
             // Leave the note in place if deletion failed.
