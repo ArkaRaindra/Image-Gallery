@@ -5,7 +5,7 @@
 @section('content')
     <h1 class="text-2xl font-bold mb-4">Comments</h1>
 
-    <form method="GET" action="{{ route('comments.index') }}" class="mb-6 max-w-md space-y-2 text-sm">
+    <form method="GET" action="{{ route('comments.search') }}" class="mb-6 max-w-md space-y-2 text-sm">
         <div class="flex items-center gap-2">
             <label class="w-24 font-semibold text-right">Commenter</label>
             <input type="text" name="commenter" value="{{ $filters['commenter'] ?? '' }}"
@@ -44,4 +44,6 @@
                 class="px-4 py-1.5 rounded bg-green-700 hover:bg-green-800 text-white cursor-pointer">Search</button>
         </div>
     </form>
+
+    @include('comments._search-list')
 @endsection

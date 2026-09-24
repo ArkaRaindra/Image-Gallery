@@ -9,7 +9,22 @@ class CommentsPageController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Comment::query()->with(['post', 'user'])->latest();
+        return view('comments.index', $this->listData($request));
+    }
+
+    public function search(Request $request)
+    {
+        return view('comments.search', $this->listData($request));
+    }
+
+    /**
+     * Data list comment yang dipakai bersama oleh halaman index dan search.
+     */
+    private function listData(Request $request): array
+    {
+        $query = Comment::query()
+            ->with(['post.tags', 'post.uploader', 'user', 'parent'])
+            ->latest();
 
         if ($commenter = $request->string('commenter')->toString()) {
             $query->where('author_name', 'like', "%{$commenter}%");
@@ -39,19 +54,10 @@ class CommentsPageController extends Controller
             $query->whereHas('post', fn ($q) => $q->where('uploader_id', $request->user()->id));
         }
 
-        $comments = $query->paginate(20)->withQueryString();
-
-        return view('comments.index', [
-            'comments' => $comments,
+        return [
+            'comments' => $query->paginate(20)->withQueryString(),
             'filters' => $request->only(['commenter', 'text', 'tags', 'score', 'order']),
             'votedComments' => session('voted_comments', []),
-        ]);
-    }
-
-    public function search(Request $request)
-    {
-        return view('comments.search', [
-            'filters' => $request->only(['commenter', 'text', 'tags', 'score', 'order']),
-        ]);
+        ];
     }
 }
