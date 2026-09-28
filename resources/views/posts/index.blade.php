@@ -163,7 +163,7 @@
                             </a>
 
                             <div data-hover-panel style="bottom: 100%;"
-                                class="absolute z-30 opacity-0 invisible transition-all duration-100 delay-200 left-0 w-72 bg-gray-900/95 border border-gray-700 rounded shadow-xl p-2 text-xs">
+                                class="absolute z-30 opacity-0 invisible transition-[opacity,visibility] duration-300 left-0 w-72 bg-gray-900/95 border border-gray-700 rounded shadow-xl p-2 text-xs">
                                 <div class="flex items-center justify-between text-gray-300 mb-1">
                                     <span class="font-medium truncate">{{ $post->uploader?->name ?? 'Admin' }}</span>
                                     <span

@@ -501,6 +501,8 @@ document.addEventListener('click', (e) => {
 });
 
 const THUMB_HOVER_PANEL_GAP = 4;
+const THUMB_HOVER_PANEL_SHOW_DELAY = 1000;
+const THUMB_HOVER_PANEL_HIDE_DELAY = 500;
 
 // Computes the "object-fit: contain" box of a naturalWidth x naturalHeight
 // media element inside a containerWidth x containerHeight box: the box's
@@ -573,15 +575,51 @@ function bindThumbHoverPanel(fit) {
     const panel = fit.closest('.group')?.querySelector('[data-hover-panel]');
     if (!panel) return;
 
-    fit.addEventListener('mouseenter', () => {
-        panel.classList.remove('opacity-0', 'invisible', 'delay-200');
-        panel.classList.add('opacity-100', 'visible', 'delay-75');
-    });
+    let showTimer = null;
+    let hideTimer = null;
 
-    fit.addEventListener('mouseleave', () => {
-        panel.classList.add('opacity-0', 'invisible', 'delay-200');
-        panel.classList.remove('opacity-100', 'visible', 'delay-75');
-    });
+    const showPanel = () => {
+        panel.classList.remove('opacity-0', 'invisible');
+        panel.classList.add('opacity-100', 'visible');
+    };
+
+    const hidePanel = () => {
+        panel.classList.add('opacity-0', 'invisible');
+        panel.classList.remove('opacity-100', 'visible');
+    };
+
+    // Cursor entered the picture or the panel: cancel any pending hide. If the
+    // panel isn't visible yet, schedule it to appear after the show delay.
+    const onEnter = () => {
+        clearTimeout(hideTimer);
+        hideTimer = null;
+
+        if (panel.classList.contains('visible') || showTimer !== null) return;
+
+        showTimer = setTimeout(() => {
+            showTimer = null;
+            showPanel();
+        }, THUMB_HOVER_PANEL_SHOW_DELAY);
+    };
+
+    // Cursor left the picture or the panel: cancel a pending show, and hide
+    // after the hide delay unless the cursor re-enters either element first.
+    const onLeave = () => {
+        clearTimeout(showTimer);
+        showTimer = null;
+
+        if (hideTimer !== null) return;
+
+        hideTimer = setTimeout(() => {
+            hideTimer = null;
+            hidePanel();
+        }, THUMB_HOVER_PANEL_HIDE_DELAY);
+    };
+
+    fit.addEventListener('mouseenter', onEnter);
+    fit.addEventListener('mouseleave', onLeave);
+    panel.addEventListener('mouseenter', onEnter);
+    panel.addEventListener('mouseleave', onLeave);
 }
 
 window.recomputeThumbFits = function () {
