@@ -4,72 +4,7 @@
 
 @section('content')
     <div class="flex flex-col md:flex-row md:items-start gap-6">
-        <aside class="space-y-4 md:w-52 md:shrink-0 md:sticky md:top-4 order-last md:order-none">
-            <div>
-                <h3 class="text-xm font-semibold uppercase text-gray-900 mb-2">Search</h3>
-                <div class="relative" data-tag-autocomplete-wrapper>
-                    <form method="GET" action="{{ route('posts.index') }}" class="flex gap-1">
-                        <input type="text" name="tags" value="{{ $tagQuery }}"
-                            placeholder="e.g. 1girl -weapon rating:general" autocomplete="off" data-tag-autocomplete
-                            class="flex-1 min-w-0 px-2 py-1.5 rounded bg-white border border-gray-700 text-sm focus:outline-none focus:border-sky-500">
-                        <button type="submit"
-                            class="px-3 rounded bg-green-700 hover:bg-green-800 text-white text-sm cursor-pointer">
-                            Search
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <div>
-                <h3 class="text-xm font-semibold uppercase text-gray-900 mb-2">Tags</h3>
-                <ul class="space-y-1 text-sm">
-                    @if ($sidebarTags->isEmpty())
-                        <li class="text-gray-900">No tags found.</li>
-                    @endif
-                    @php
-                        $categoryOrder = ['artist', 'copyright', 'character', 'general', 'meta'];
-                        $groupedSidebarTags = $sidebarTags->groupBy('category');
-                    @endphp
-                    @foreach ($categoryOrder as $cat)
-                        @foreach (($groupedSidebarTags[$cat] ?? collect())->sortByDesc('post_count') as $tag)
-                            @php
-                                $tagColor = match ($tag->category) {
-                                    'artist' => 'text-red-700',
-                                    'character' => 'text-green-700',
-                                    'copyright' => 'text-purple-700',
-                                    'meta' => 'text-amber-700',
-                                    default => 'text-sky-700',
-                                };
-                            @endphp
-                            <li class="flex justify-between gap-2">
-                                <span class="truncate">
-                                    <a href="{{ route('posts.index', ['tags' => $tag->name, 'wiki' => 1]) }}"
-                                        class="text-gray-600 hover:text-gray-900 mr-1">?</a>
-                                    <a href="{{ route('posts.index', ['tags' => $tag->name]) }}"
-                                        class="{{ $tagColor }} hover:underline">{{ $tag->name }}</a>
-                                </span>
-                                <span class="text-gray-600 shrink-0">{{ $tag->post_count }}</span>
-                            </li>
-                        @endforeach
-                    @endforeach
-                </ul>
-            </div>
-
-            <div>
-                <h3 class="text-xm font-semibold uppercase text-gray-900 mb-2">Rating</h3>
-                @php
-                    $tagQueryWithoutRating = collect(explode(' ', $tagQuery))
-                        ->filter(fn($t) => $t !== '' && !str_starts_with($t, 'rating:'))
-                        ->implode(' ');
-                @endphp
-                <ul class="space-y-1 text-sm">
-                    @foreach (['general' => 'General', 'sensitive' => 'Sensitive', 'questionable' => 'Questionable', 'explicit' => 'Explicit'] as $key => $label)
-                        <li><a href="{{ route('posts.index', ['tags' => trim($tagQueryWithoutRating . ' rating:' . $key)]) }}"
-                                class="hover:text-gray-950">{{ $label }}</a></li>
-                    @endforeach
-                </ul>
-            </div>
-        </aside>
+        @include('partials.post-sidebar', ['tagQuery' => $tagQuery, 'sidebarTags' => $sidebarTags])
 
         <main class="flex-1 min-w-0">
             <div class="flex items-center justify-between mb-3 border-b border-gray-800 pb-2">
@@ -162,41 +97,7 @@
                                 </div>
                             </a>
 
-                            <div data-hover-panel style="bottom: 100%;"
-                                class="absolute z-30 opacity-0 invisible transition-[opacity,visibility] duration-300 left-0 w-72 bg-gray-900/95 border border-gray-700 rounded shadow-xl p-2 text-xs">
-                                <div class="flex items-center justify-between text-gray-300 mb-1">
-                                    <span class="font-medium truncate">{{ $post->uploader?->name ?? 'Admin' }}</span>
-                                    <span
-                                        class="text-gray-500 shrink-0 ml-2">{{ $post->created_at->diffForHumans() }}</span>
-                                </div>
-                                <div class="flex items-center gap-2 text-gray-500 mb-2">
-                                    <span>{{ strtoupper(substr($post->rating, 0, 1)) }}</span>
-                                    <span>{{ $post->humanFileSize() }}</span>
-                                    <span>.{{ $post->file_ext }}, <span
-                                            data-post-dims>{{ $post->width }}×{{ $post->height }}</span></span>
-                                </div>
-                                @php
-                                    $hoverCategoryOrder = ['artist', 'copyright', 'character', 'general', 'meta'];
-                                    $groupedHoverTags = $post->tags->groupBy('category');
-                                @endphp
-                                <div class="flex flex-wrap gap-x-2 gap-y-0.5">
-                                    @foreach ($hoverCategoryOrder as $cat)
-                                        @foreach (($groupedHoverTags[$cat] ?? collect())->sortByDesc('post_count') as $tag)
-                                            @php
-                                                $hoverTagColor = match ($tag->category) {
-                                                    'artist' => 'text-red-400',
-                                                    'character' => 'text-green-400',
-                                                    'copyright' => 'text-purple-400',
-                                                    'meta' => 'text-amber-400',
-                                                    default => 'text-sky-400',
-                                                };
-                                            @endphp
-                                            <a href="{{ route('posts.index', ['tags' => $tag->name]) }}"
-                                                class="{{ $hoverTagColor }} hover:underline">{{ $tag->name }}</a>
-                                        @endforeach
-                                    @endforeach
-                                </div>
-                            </div>
+                            @include('partials.post-hover-panel', ['post' => $post])
                         </div>
                     @empty
                         <p class="col-span-full text-center text-gray-900 py-12">No posts match this search.</p>
