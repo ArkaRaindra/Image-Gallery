@@ -28,6 +28,11 @@ class PostsTable
                     ->square(),
                 TextColumn::make('rating')
                     ->badge(),
+                TextColumn::make('uploader.name')
+                    ->label('Uploader')
+                    ->placeholder('-')
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('score')
                     ->sortable(),
                 IconColumn::make('is_approved')
@@ -42,6 +47,10 @@ class PostsTable
             ])
             ->filters([
                 TernaryFilter::make('is_approved'),
+                SelectFilter::make('uplaoder')
+                    ->relationship('uploader', 'name')
+                    ->searchable()
+                    ->preload(),
                 SelectFilter::make('rating')
                     ->options([
                         'general' => 'General',

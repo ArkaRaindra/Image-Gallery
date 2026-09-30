@@ -1,0 +1,1 @@
+<span class="ml-1 px-1.5 py-0.5 rounded text-[10px] font-semibold leading-none align-middle {{ $user->roleBadgeBgClass() }} {{ $user->roleTextClass() }}">{{ $user->roleLabel() }}</span>

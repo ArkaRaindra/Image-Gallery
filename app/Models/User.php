@@ -138,6 +138,33 @@ class User extends Authenticatable implements FilamentUser
         return ucfirst((string) $this->role);
     }
 
+    /**
+     * Tailwind text color for this user's role. Shared by the role badge and
+     * the username so both always match.
+     */
+    public function roleTextClass(): string
+    {
+        return match ($this->role) {
+            self::ROLE_OWNER => 'text-amber-700',
+            self::ROLE_ADMIN => 'text-red-700',
+            self::ROLE_MODERATOR => 'text-green-700',
+            default => 'text-sky-700',
+        };
+    }
+
+    /**
+     * Tailwind background color for this user's role badge.
+     */
+    public function roleBadgeBgClass(): string
+    {
+        return match ($this->role) {
+            self::ROLE_OWNER => 'bg-amber-100',
+            self::ROLE_ADMIN => 'bg-red-100',
+            self::ROLE_MODERATOR => 'bg-green-100',
+            default => 'bg-sky-200',
+        };
+    }
+
     public function hasRoleAtLeast(string $role): bool
     {
         return $this->roleLevel() >= (self::ROLE_LEVELS[$role] ?? PHP_INT_MAX);

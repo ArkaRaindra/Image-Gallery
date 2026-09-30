@@ -28,10 +28,11 @@
                 @endif
 
                 <div class="flex items-center gap-2 mb-1">
-                    <span class="font-semibold text-sky-700">
+                    <span class="font-semibold {{ $comment->user?->roleTextClass() ?? 'text-sky-700' }}">
                         @if ($comment->user)
                             <a href="{{ route('users.show', $comment->user) }}"
                                 class="hover:underline">{{ $comment->author_name }}</a>
+                            @include('partials.role-badge', ['user' => $comment->user])
                         @else
                             {{ $comment->author_name }}
                         @endif
@@ -45,8 +46,8 @@
                     {!! \App\Support\SimpleMarkdown::toHtml(\Illuminate\Support\Str::limit($comment->body, 300)) !!}
                 </div>
                 <div class="flex items-center gap-3 text-xs">
-                    <span class="flex items-center gap-1" data-comment-vote-widget
-                        data-comment-id="{{ $comment->id }}" data-voted="{{ $votedDirection }}">
+                    <span class="flex items-center gap-1" data-comment-vote-widget data-comment-id="{{ $comment->id }}"
+                        data-voted="{{ $votedDirection }}">
                         <button type="button" data-comment-vote="up"
                             class="{{ $votedDirection === 'up' ? 'text-green-400' : 'hover:text-green-400' }} cursor-pointer">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"

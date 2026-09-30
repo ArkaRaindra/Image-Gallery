@@ -125,6 +125,19 @@
                     <li>
                         <a href="{{ route('posts.download', $post) }}" class="text-gray-700 hover:underline">Download</a>
                     </li>
+                    @if (auth()->user()?->isModerator())
+                        <li>
+                            <form method="POST" action="{{ route('posts.destroy', $post) }}"
+                                onsubmit="return confirm('Delete this post? This cannot be undone.')">
+                                @csrf
+                                @method('DELETE')
+                                <input type="hidden" name="tags" value="{{ $tagQuery }}">
+                                <button type="submit" class="text-red-600 hover:underline text-left cursor-pointer">
+                                    Delete
+                                </button>
+                            </form>
+                        </li>
+                    @endif
                 </ul>
             </div>
         </aside>
@@ -141,15 +154,14 @@
                 <div class="relative" data-post-media-container>
                     @if ($post->isVideo())
                         <video id="post-image"
-                            src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->file_path) }}"
-                            controls class="w-full max-h-[80vh] object-contain rounded mx-auto"></video>
+                            src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->file_path) }}" controls
+                            class="w-full max-h-[80vh] object-contain rounded mx-auto"></video>
                     @else
                         <img id="post-image"
                             src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->file_path) }}"
                             alt="post {{ $post->id }}" class="w-full max-h-[80vh] object-contain rounded mx-auto">
 
-                        <div id="notes-layer" class="absolute hidden" data-notes-layer
-                            data-post-id="{{ $post->id }}"
+                        <div id="notes-layer" class="absolute hidden" data-notes-layer data-post-id="{{ $post->id }}"
                             data-can-manage="{{ $post->canManageNotes(auth()->user()) ? '1' : '0' }}"
                             data-store-url="{{ route('notes.store', $post) }}"
                             data-notes="{{ $post->notes->map->toOverlayArray()->toJson() }}"></div>
@@ -249,10 +261,12 @@
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
-                                        <span class="font-medium text-gray-900">
+                                        <span
+                                            class="font-medium {{ $comment->user?->roleTextClass() ?? 'text-gray-900' }}">
                                             @if ($comment->user)
                                                 <a href="{{ route('users.show', $comment->user) }}"
                                                     class="hover:underline">{{ $comment->author_name }}</a>
+                                                @include('partials.role-badge', ['user' => $comment->user])
                                             @else
                                                 {{ $comment->author_name }}
                                             @endif
@@ -299,7 +313,7 @@
                                                 class="edit-toggle-btn text-sky-700 hover:underline cursor-pointer"
                                                 data-comment-id="{{ $comment->id }}">Edit</button>
                                         @endif
-                                        @if (auth()->user()?->isAdmin())
+                                        @if (auth()->user()?->isModerator())
                                             <form method="POST" action="{{ route('comments.destroy', $comment) }}"
                                                 onsubmit="return confirm('Delete this comment?')">
                                                 @csrf
@@ -394,10 +408,14 @@
                                         <div class="flex-1 min-w-0">
                                             <div
                                                 class="flex items-center justify-between text-[11px] text-gray-500 mb-0.5">
-                                                <span class="font-medium text-gray-900">
+                                                <span
+                                                    class="font-medium {{ $reply->user?->roleTextClass() ?? 'text-gray-900' }}">
                                                     @if ($reply->user)
                                                         <a href="{{ route('users.show', $reply->user) }}"
                                                             class="hover:underline">{{ $reply->author_name }}</a>
+                                                        @include('partials.role-badge', [
+                                                            'user' => $reply->user,
+                                                        ])
                                                     @else
                                                         {{ $reply->author_name }}
                                                     @endif
@@ -441,7 +459,7 @@
                                                         class="edit-toggle-btn text-sky-700 hover:underline cursor-pointer"
                                                         data-comment-id="{{ $reply->id }}">Edit</button>
                                                 @endif
-                                                @if (auth()->user()?->isAdmin())
+                                                @if (auth()->user()?->isModerator())
                                                     <form method="POST" action="{{ route('comments.destroy', $reply) }}"
                                                         onsubmit="return confirm('Delete this comment?')" class="inline">
                                                         @csrf
@@ -563,7 +581,7 @@
             captureBtn?.addEventListener('click', () => {
                 if (!video || !video.videoWidth) {
                     setStatus('Play the video above first, then pause on the frame you want.',
-                    'text-amber-700');
+                        'text-amber-700');
                     return;
                 }
 

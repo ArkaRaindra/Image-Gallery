@@ -13,7 +13,9 @@
         </div>
 
         <div>
-            <h1 class="text-xl font-bold text-sky-700 mb-2">{{ $user->name }}</h1>
+            <h1 class="text-xl font-bold {{ $user->roleTextClass() }} mb-2">
+                {{ $user->name }}
+            </h1>
             <form method="POST" action="{{ route('account.avatar') }}" enctype="multipart/form-data"
                 class="flex items-center gap-2">
                 @csrf

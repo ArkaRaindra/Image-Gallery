@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Posts\Schemas;
 
+use App\Models\Post;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
@@ -23,6 +24,13 @@ class PostForm
                     ->directory('posts')
                     ->required()
                     ->columnSpanFull(),
+
+                 TextInput::make('uploader_name')
+                    ->label('Uploader')
+                    ->formatStateUsing(fn (?Post $record): string => $record?->uploader?->name ?? '-')
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->visibleOn('edit'),
 
                 Select::make('rating')
                     ->options([

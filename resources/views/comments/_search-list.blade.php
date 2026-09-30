@@ -28,7 +28,8 @@
                         @else
                             <img data-thumb-media
                                 src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail_path) }}"
-                                alt="post {{ $post->id }}" class="block w-full h-full object-contain cursor-pointer">
+                                alt="post {{ $post->id }}"
+                                class="block w-full h-full object-contain cursor-pointer">
                         @endif
                     </div>
                 </a>
@@ -44,10 +45,12 @@
                     <div class="flex gap-6">
                         {{-- Kolom kiri: author + waktu --}}
                         <div class="w-36 shrink-0 text-sm">
-                            <div class="font-semibold text-sky-700 break-words">
+                            <div
+                                class="font-semibold {{ $comment->user?->roleTextClass() ?? 'text-sky-700' }} break-words">
                                 @if ($comment->user)
                                     <a href="{{ route('users.show', $comment->user) }}"
                                         class="hover:underline">{{ $comment->author_name }}</a>
+                                    @include('partials.role-badge', ['user' => $comment->user])
                                 @else
                                     {{ $comment->author_name }}
                                 @endif
@@ -63,7 +66,8 @@
                                         {{ $comment->parent->author_name }} said in
                                         @if ($post)
                                             <a href="{{ route('posts.show', $post) }}#comments"
-                                                class="text-sky-700 hover:underline">comment #{{ $comment->parent->id }}</a>:
+                                                class="text-sky-700 hover:underline">comment
+                                                #{{ $comment->parent->id }}</a>:
                                         @else
                                             comment #{{ $comment->parent->id }}:
                                         @endif

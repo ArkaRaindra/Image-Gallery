@@ -13,14 +13,19 @@
             @endif
         </div>
         <div>
-            <h1 class="text-xl font-bold text-sky-700">{{ $profileUser->name }}</h1>
-            <p class="text-sm text-gray-600">{{ $profileUser->roleLabel() }}</p>
+            <h1 class="text-xl font-bold  {{ $profileUser->roleTextClass() }}">
+                {{ $profileUser->name }}
+            </h1>
         </div>
     </div>
 
     <h2 class="font-semibold mb-2">Statistics</h2>
     <table class="text-sm mb-8">
         <tbody>
+            <tr>
+                <td class="pr-6 py-0.5 text-gray-600">Level</td>
+                <td><p class="text-sm {{ $profileUser->roleTextClass() }}">{{ $profileUser->roleLabel() }}</p></td>
+            </tr>
             <tr>
                 <td class="pr-6 py-0.5 text-gray-600">Join Date</td>
                 <td>{{ $profileUser->created_at->format('Y-m-d') }}</td>
