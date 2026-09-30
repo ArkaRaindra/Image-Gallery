@@ -636,6 +636,237 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.addEventListener('resize', debounce(() => window.recomputeThumbFits(), 150));
 
+// --- Username hover card ----------------------------------------------------
+// Hovering a [data-user-card] link shows a profile card above it. It follows
+// the same timing rules as the post thumbnail hover panel: it appears after
+// the show delay, stays open while the cursor is on the username or on the
+// card, disappears after the hide delay, and fades with the CSS transition.
+const USER_CARD_SHOW_DELAY = THUMB_HOVER_PANEL_SHOW_DELAY;
+const USER_CARD_HIDE_DELAY = THUMB_HOVER_PANEL_HIDE_DELAY;
+const USER_CARD_GAP = THUMB_HOVER_PANEL_GAP;
+const USER_CARD_MARGIN = 8;
+const USER_CARD_STATS = [
+    ['uploads', 'Uploads'],
+    ['tag_edits', 'Tag Edits'],
+    ['note_edits', 'Note Edits'],
+    ['favorites', 'Favorites'],
+    ['comments', 'Comments'],
+    ['forum_posts', 'Forum Posts'],
+];
+
+function createUserCardElement(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+}
+
+function setupUserHoverCard() {
+    const cache = new Map();
+    let card = null;
+    let activeTrigger = null;
+    let showTimer = null;
+    let hideTimer = null;
+    let showToken = 0;
+    let pending = false;
+
+    const isVisible = () => card !== null && card.classList.contains('visible');
+
+    const load = (trigger) => {
+        const url = trigger.dataset.userCardUrl;
+
+        if (!cache.has(url)) {
+            cache.set(
+                url,
+                fetch(url, { headers: { Accept: 'application/json' } })
+                    .then((res) => {
+                        if (!res.ok) throw new Error('Failed to load user card');
+                        return res.json();
+                    })
+                    .catch((error) => {
+                        cache.delete(url);
+                        throw error;
+                    }),
+            );
+        }
+
+        return cache.get(url);
+    };
+
+    const render = (data) => {
+        card.replaceChildren();
+
+        const header = createUserCardElement('div', 'flex items-center gap-3 mb-3');
+
+        const avatar = createUserCardElement(
+            'div',
+            'w-10 h-10 rounded-full overflow-hidden bg-gray-600 flex items-center justify-center shrink-0',
+        );
+        if (data.avatar_url) {
+            const img = createUserCardElement('img', 'w-full h-full object-cover');
+            img.src = data.avatar_url;
+            img.alt = data.name;
+            avatar.appendChild(img);
+        } else {
+            avatar.appendChild(createUserCardElement('span', 'text-sm font-bold text-gray-300', data.initial));
+        }
+        header.appendChild(avatar);
+
+        const info = createUserCardElement('div', 'min-w-0');
+        const nameRow = createUserCardElement('div', 'flex items-center gap-2');
+        const name = createUserCardElement(
+            'a',
+            'text-base font-medium truncate hover:underline ' + data.name_class,
+            data.name,
+        );
+        name.href = data.profile_url;
+        nameRow.appendChild(name);
+        nameRow.appendChild(
+            createUserCardElement(
+                'span',
+                'px-1.5 py-0.5 rounded text-[10px] font-semibold leading-none shrink-0 ' + data.badge_class,
+                data.role_label,
+            ),
+        );
+        info.appendChild(nameRow);
+        info.appendChild(createUserCardElement('div', 'text-gray-500', data.joined_at ?? ''));
+        header.appendChild(info);
+        card.appendChild(header);
+
+        const grid = createUserCardElement('div', 'grid grid-cols-3 gap-y-3 text-center');
+        USER_CARD_STATS.forEach(([key, label]) => {
+            const cell = createUserCardElement('div');
+            cell.appendChild(
+                createUserCardElement('div', 'text-base font-semibold text-gray-100', formatCount(data.stats[key] ?? 0)),
+            );
+            cell.appendChild(createUserCardElement('div', 'text-gray-400', label));
+            grid.appendChild(cell);
+        });
+        card.appendChild(grid);
+    };
+
+    const position = (trigger) => {
+        const rect = trigger.getBoundingClientRect();
+        const cardWidth = card.offsetWidth;
+        const cardHeight = card.offsetHeight;
+
+        const minLeft = window.scrollX + USER_CARD_MARGIN;
+        const maxLeft = window.scrollX + document.documentElement.clientWidth - cardWidth - USER_CARD_MARGIN;
+        const left = Math.max(minLeft, Math.min(rect.left + window.scrollX, maxLeft));
+
+        // Above the username by default; flip below when there is no room.
+        const fitsAbove = rect.top - cardHeight - USER_CARD_GAP >= USER_CARD_MARGIN;
+        const top = fitsAbove
+            ? rect.top + window.scrollY - cardHeight - USER_CARD_GAP
+            : rect.bottom + window.scrollY + USER_CARD_GAP;
+
+        card.style.left = left + 'px';
+        card.style.top = top + 'px';
+    };
+
+    const ensureCard = () => {
+        if (card) return;
+
+        card = createUserCardElement(
+            'div',
+            'absolute z-30 opacity-0 invisible transition-[opacity,visibility] duration-300 w-80 bg-gray-900/95 border border-gray-700 rounded shadow-xl p-3 text-xs',
+        );
+        card.addEventListener('mouseenter', () => onEnter(null));
+        card.addEventListener('mouseleave', onLeave);
+        document.body.appendChild(card);
+    };
+
+    const showCard = () => {
+        card.classList.remove('opacity-0', 'invisible');
+        card.classList.add('opacity-100', 'visible');
+    };
+
+    const hideCard = () => {
+        if (!card) return;
+        card.classList.add('opacity-0', 'invisible');
+        card.classList.remove('opacity-100', 'visible');
+    };
+
+    const cancelPendingShow = () => {
+        clearTimeout(showTimer);
+        showTimer = null;
+        showToken += 1;
+        pending = false;
+    };
+
+    const scheduleShow = (trigger) => {
+        const token = ++showToken;
+        pending = true;
+
+        // Start loading right away so the data is ready when the delay ends.
+        load(trigger).catch(() => {});
+
+        showTimer = setTimeout(async () => {
+            showTimer = null;
+
+            let data;
+            try {
+                data = await load(trigger);
+            } catch {
+                if (token === showToken) pending = false;
+                return;
+            }
+
+            if (token !== showToken || activeTrigger !== trigger) return;
+
+            pending = false;
+            ensureCard();
+            render(data);
+            position(trigger);
+            showCard();
+        }, USER_CARD_SHOW_DELAY);
+    };
+
+    // Cursor entered a username (trigger) or the card (trigger === null):
+    // cancel any pending hide. If the card isn't visible yet, schedule it to
+    // appear after the show delay.
+    const onEnter = (trigger) => {
+        clearTimeout(hideTimer);
+        hideTimer = null;
+
+        if (trigger && trigger !== activeTrigger) {
+            // Moved to a different username: drop the old card and restart.
+            cancelPendingShow();
+            hideCard();
+            activeTrigger = trigger;
+        }
+
+        if (!activeTrigger || isVisible() || pending) return;
+
+        scheduleShow(activeTrigger);
+    };
+
+    // Cursor left the username or the card: cancel a pending show, and hide
+    // after the hide delay unless the cursor re-enters either one first.
+    function onLeave() {
+        cancelPendingShow();
+
+        if (hideTimer !== null) return;
+
+        hideTimer = setTimeout(() => {
+            hideTimer = null;
+            hideCard();
+        }, USER_CARD_HIDE_DELAY);
+    }
+
+    document.addEventListener('mouseover', (e) => {
+        const trigger = e.target.closest?.('[data-user-card]');
+        if (trigger) onEnter(trigger);
+    });
+
+    document.addEventListener('mouseout', (e) => {
+        const trigger = e.target.closest?.('[data-user-card]');
+        if (trigger && !trigger.contains(e.relatedTarget)) onLeave();
+    });
+}
+
+document.addEventListener('DOMContentLoaded', setupUserHoverCard);
+
 // --- Post translation notes -------------------------------------------------
 // Notes are rectangles (stored as % of the image) overlaid on a post's image,
 // following the formatting rules at https://danbooru.donmai.us/wiki_pages/help:notes.

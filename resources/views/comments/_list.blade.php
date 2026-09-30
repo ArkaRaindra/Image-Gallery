@@ -30,7 +30,8 @@
                 <div class="flex items-center gap-2 mb-1">
                     <span class="font-semibold {{ $comment->user?->roleTextClass() ?? 'text-sky-700' }}">
                         @if ($comment->user)
-                            <a href="{{ route('users.show', $comment->user) }}"
+                            <a href="{{ route('users.show', $comment->user) }}" data-user-card
+                                data-user-card-url="{{ route('users.card', $comment->user) }}"
                                 class="hover:underline">{{ $comment->author_name }}</a>
                             @include('partials.role-badge', ['user' => $comment->user])
                         @else

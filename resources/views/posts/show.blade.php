@@ -264,7 +264,8 @@
                                         <span
                                             class="font-medium {{ $comment->user?->roleTextClass() ?? 'text-gray-900' }}">
                                             @if ($comment->user)
-                                                <a href="{{ route('users.show', $comment->user) }}"
+                                                <a href="{{ route('users.show', $comment->user) }}" data-user-card
+                                                    data-user-card-url="{{ route('users.card', $comment->user) }}"
                                                     class="hover:underline">{{ $comment->author_name }}</a>
                                                 @include('partials.role-badge', ['user' => $comment->user])
                                             @else
@@ -411,7 +412,8 @@
                                                 <span
                                                     class="font-medium {{ $reply->user?->roleTextClass() ?? 'text-gray-900' }}">
                                                     @if ($reply->user)
-                                                        <a href="{{ route('users.show', $reply->user) }}"
+                                                        <a href="{{ route('users.show', $reply->user) }}" data-user-card
+                                                            data-user-card-url="{{ route('users.card', $reply->user) }}"
                                                             class="hover:underline">{{ $reply->author_name }}</a>
                                                         @include('partials.role-badge', [
                                                             'user' => $reply->user,

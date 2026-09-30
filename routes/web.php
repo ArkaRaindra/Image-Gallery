@@ -55,4 +55,5 @@ Route::get('/account', [AccountController::class, 'show'])->name('account.show')
 Route::post('/account/avatar', [AccountController::class, 'updateAvatar'])->name('account.avatar')->middleware('auth');
 
 Route::get('/users/autocomplete', [UserController::class, 'autocomplete'])->name('users.autocomplete');
+Route::get('/users/{user}/card', [UserController::class, 'card'])->name('users.card');
 Route::get('/users/{user}', [ProfileController::class, 'show'])->name('users.show');

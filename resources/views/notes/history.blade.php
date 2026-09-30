@@ -54,7 +54,8 @@
                         </td>
                         <td class="py-2 px-3 whitespace-nowrap">
                             @if ($version->updater)
-                                <a href="{{ route('users.show', $version->updater) }}"
+                                <a href="{{ route('users.show', $version->updater) }}" data-user-card
+                                    data-user-card-url="{{ route('users.card', $version->updater) }}"
                                     class="text-sky-700 hover:underline">{{ $version->updater->name }} »</a>
                             @else
                                 <span class="text-gray-500">Anonymous</span>

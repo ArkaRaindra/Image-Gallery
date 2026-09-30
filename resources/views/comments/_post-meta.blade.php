@@ -24,7 +24,8 @@
         <span>
             <span class="font-semibold">Uploader</span>
             @if ($post->uploader)
-                <a href="{{ route('users.show', $post->uploader) }}"
+                <a href="{{ route('users.show', $post->uploader) }}" data-user-card
+                    data-user-card-url="{{ route('users.card', $post->uploader) }}"
                     class="text-sky-700 hover:underline">{{ $post->uploader->name }}</a>
             @else
                 <span class="text-gray-700">Admin</span>

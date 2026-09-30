@@ -13,7 +13,7 @@
             @endif
         </div>
         <div>
-            <h1 class="text-xl font-bold  {{ $profileUser->roleTextClass() }}">
+            <h1 class="text-2xl font-bold  {{ $profileUser->roleTextClass() }}">
                 {{ $profileUser->name }}
             </h1>
         </div>

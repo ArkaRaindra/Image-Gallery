@@ -153,6 +153,20 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
+     * Same role color as roleTextClass(), tuned for dark backgrounds
+     * (used by the username hover card).
+     */
+    public function roleDarkTextClass(): string
+    {
+        return match ($this->role) {
+            self::ROLE_OWNER => 'text-amber-400',
+            self::ROLE_ADMIN => 'text-red-400',
+            self::ROLE_MODERATOR => 'text-green-400',
+            default => 'text-sky-400',
+        };
+    }
+
+    /**
      * Tailwind background color for this user's role badge.
      */
     public function roleBadgeBgClass(): string
