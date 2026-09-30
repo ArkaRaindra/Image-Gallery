@@ -17,18 +17,22 @@
                             {{ $singleTagCategory === 'artist' ? 'Artist' : 'Wiki' }}
                         </button>
                     @endif
+                    <button id="mobile-search-toggle" type="button"
+                        class="md:hidden pb-2 border-b-2 border-transparent text-gray-900 cursor-pointer">
+                        Search »
+                    </button>
                 </div>
 
                 <div class="flex items-center gap-3 text-sm text-gray-500">
-                    <span>{{ $posts->total() }} posts</span>
+                    <span class="hidden md:inline">{{ $posts->total() }} posts</span>
                     <select id="thumb-size"
                         class="bg-white border border-gray-700 rounded text-xs px-2 py-1 focus:outline-none">
-                        <option value="110">Small</option>
-                        <option value="200" selected>Medium</option>
-                        <option value="300">Large</option>
-                        <option value="400">Huge</option>
-                        <option value="550">Gigantic</option>
-                        <option value="800">Absurd</option>
+                        <option value="small">Small</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="large">Large</option>
+                        <option value="huge">Huge</option>
+                        <option value="gigantic" data-desktop-only>Gigantic</option>
+                        <option value="absurd" data-desktop-only>Absurd</option>
                     </select>
 
                     <div class="relative">
@@ -47,16 +51,18 @@
                 </div>
             </div>
 
+            <div id="mobile-search" class="hidden md:hidden relative mb-3" data-tag-autocomplete-wrapper>
+                ...
+            </div>
+
             <div id="panel-posts">
-                <div id="thumb-grid" class="grid gap-3 items-start"
-                    style="--thumb-size: 220px; grid-template-columns: repeat(auto-fill, minmax(min(var(--thumb-size), 100%), 1fr));">
+                <div id="thumb-grid" data-size="medium" class="grid gap-2 md:gap-3 items-start">
                     @forelse ($posts as $post)
                         @php $votedDirection = $votedPosts[$post->id] ?? null; @endphp
                         <div class="relative group">
-                            <a href="{{ route('posts.show', $post) }}"
-                                class="block rounded overflow-hidden cursor-default">
+                            <a href="{{ route('posts.show', $post) }}" class="block rounded overflow-hidden cursor-default">
                                 <div class="relative flex items-center justify-center rounded-t overflow-hidden"
-                                    data-thumb-container style="height: var(--thumb-size);">
+                                    data-thumb-container>
                                     <div class="absolute inset-0" data-thumb-fit>
                                         @include('partials.duration-badge', ['post' => $post])
                                         @if ($post->thumbnailIsVideo())
@@ -75,8 +81,7 @@
                                     </div>
                                 </div>
                                 <div class="flex items-center justify-center gap-1.5 text-xs text-gray-500 py-1"
-                                    data-vote-widget data-post-id="{{ $post->id }}"
-                                    data-voted="{{ $votedDirection }}">
+                                    data-vote-widget data-post-id="{{ $post->id }}" data-voted="{{ $votedDirection }}">
                                     <button type="button" data-vote="up"
                                         class="{{ $votedDirection === 'up' ? 'text-green-800' : 'hover:text-green-700 cursor-pointer' }}">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
@@ -118,10 +123,41 @@
     </div>
 
     <script>
-        document.getElementById('thumb-size')?.addEventListener('change', function(e) {
-            document.getElementById('thumb-grid').style.setProperty('--thumb-size', e.target.value + 'px');
-            window.recomputeThumbFits?.();
-        });
+                (function() {
+            const select = document.getElementById('thumb-size');
+            const grid = document.getElementById('thumb-grid');
+            if (!select || !grid) return;
+
+            // Simpan daftar opsi asli (6 ukuran). Di mobile hanya 4 yang ditampilkan.
+            const allOptions = [...select.options].map((o) => ({
+                value: o.value,
+                label: o.textContent.trim(),
+                desktopOnly: o.hasAttribute('data-desktop-only'),
+            }));
+            const mobileQuery = window.matchMedia('(max-width: 767px)');
+
+            function buildOptions() {
+                const current = select.value;
+                select.innerHTML = '';
+
+                allOptions
+                    .filter((o) => !(mobileQuery.matches && o.desktopOnly))
+                    .forEach((o) => select.add(new Option(o.label, o.value)));
+
+                const stillValid = [...select.options].some((o) => o.value === current);
+                select.value = stillValid ? current : (mobileQuery.matches ? 'huge' : 'medium');
+                grid.dataset.size = select.value;
+                window.recomputeThumbFits?.();
+            }
+
+            select.addEventListener('change', (e) => {
+                grid.dataset.size = e.target.value;
+                window.recomputeThumbFits?.();
+            });
+
+            mobileQuery.addEventListener('change', buildOptions);
+            buildOptions();
+        })();
 
         (function() {
             const moreBtn = document.getElementById('more-menu-btn');

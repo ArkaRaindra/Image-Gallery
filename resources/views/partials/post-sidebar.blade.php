@@ -1,5 +1,5 @@
 <aside class="space-y-4 md:w-52 md:shrink-0 md:sticky md:top-4 order-last md:order-none">
-    <div>
+    <div id="sidebar-search" class="scroll-mt-4">
         <h3 class="text-xm font-semibold uppercase text-gray-900 mb-2">Search</h3>
         <div class="relative" data-tag-autocomplete-wrapper>
             <form method="GET" action="{{ route('posts.index') }}" class="flex gap-1">

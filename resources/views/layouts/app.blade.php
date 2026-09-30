@@ -17,96 +17,71 @@
         $isCommentsSection = request()->routeIs('comments.index') || request()->routeIs('comments.search');
         $isNotesSection = request()->routeIs('notes.index') || request()->routeIs('notes.changes');
     @endphp
-    <header class="bg-gallery-green border-b border-green-800">
-        <div class="w-full px-6 py-2 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm font-medium">
-            <a href="{{ route('home') }}">
-                <img src="{{ asset('images/VSC.png') }}" alt="Logo" width="80" height="80">
+    <header class="bg-gallery-green ">
+        {{-- Baris logo (paling atas, mobile & desktop) --}}
+        <div class="w-full px-4 md:px-6 py-2 flex items-center justify-between">
+            <a href="{{ route('home') }}" class="inline-block">
+                <img src="{{ asset('images/VSC.png') }}" alt="Logo" class="w-14 h-14 md:w-20 md:h-20 object-contain">
             </a>
 
-            @auth
-                <a href="{{ route('account.show') }}"
-                    class="text-green-900 {{ $isAccountSection ? 'font-bold text-base' : '' }}">My Account</a>
-            @else
-                <a href="{{ route('login') }}" class="text-red-400">Login</a>
-            @endauth
-
-            <a href="{{ route('posts.index') }}"
-                class="text-green-900 {{ request()->routeIs('posts.index') || request()->routeIs('posts.show') ? 'font-bold text-base' : '' }}">Posts</a>
-            <a href="{{ route('comments.index') }}"
-                class="text-green-900 {{ $isCommentsSection ? 'font-bold text-base' : '' }}">Comments</a>
-            <a href="{{ route('notes.index') }}"
-                class="text-green-900 {{ $isNotesSection ? 'font-bold text-base' : '' }}">Notes</a>
-            <span class="text-gray-600 cursor-not-allowed">Artists</span>
-            <span class="text-gray-600 cursor-not-allowed">Tags</span>
-            <span class="text-gray-600 cursor-not-allowed">Pools</span>
-            <span class="text-gray-600 cursor-not-allowed">Wiki</span>
-            <span class="text-gray-600 cursor-not-allowed">Forum</span>
-            <span class="text-gray-600 cursor-not-allowed">More »</span>
+            <button type="button" id="mobile-menu-btn" aria-label="Toggle menu" aria-expanded="false"
+                class="md:hidden p-2 text-green-900 cursor-pointer">
+                <svg id="menu-icon-open" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-8 h-8">
+                    <path d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+                <svg id="menu-icon-close" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-8 h-8 hidden">
+                    <path d="M6 6l12 12M18 6L6 18" />
+                </svg>
+            </button>
         </div>
-        <div class="bg-green-700/70 border-t border-green-300">
+
+        {{-- Desktop: navigasi utama + sub navigasi --}}
+        <div
+            class="hidden md:flex w-full px-6 py-2 flex-wrap items-center gap-x-6 gap-y-1 text-sm font-medium">
+            @include('partials.nav-main')
+        </div>
+        <div class="hidden md:block bg-green-700/70 border-t border-green-300">
             <div class="w-full px-6 py-1.5 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-white-400">
-                @if ($isAuthSection)
-                    <a href="{{ route('register') }}" class="hover:text-gray-200 cursor-pointer">Sign up</a>
-                    <a href="{{ route('login') }}" class="hover:text-gray-200 cursor-pointer">Login</a>
-                    <span class="cursor-not-allowed">Forgot password</span>
-                @elseif ($isAccountSection)
-                    <a href="{{ route('posts.index') }}" class="hover:text-gray-200 cursor-pointer">Listing</a>
-                    <span class="cursor-not-allowed">Profile</span>
-                    <span class="cursor-not-allowed">Settings</span>
-                    <span class="cursor-not-allowed">Messages</span>
-                    <span class="cursor-not-allowed">My Uploads</span>
-                    <span class="cursor-not-allowed">Upgrade</span>
-                    <form method="POST" action="{{ route('logout') }}" class="inline m-0">
-                        @csrf
-                        <button type="submit" class="hover:text-gray-200 cursor-pointer">Log out</button>
-                    </form>
-                @elseif ($isCommentsSection)
-                    <a href="{{ route('comments.index') }}"
-                        class="hover:text-gray-200 cursor-pointer {{ request()->routeIs('comments.index') ? 'font-bold text-gray-200' : '' }}">Comments</a>
-                    @auth
-                        <a href="{{ route('comments.index', ['on_my_uploads' => 1]) }}"
-                            class="hover:text-gray-200 cursor-pointer">On My Uploads</a>
-                    @else
-                        <span class="cursor-not-allowed">On My Uploads</span>
-                    @endauth
-                    <a href="{{ route('comments.search') }}"
-                        class="hover:text-gray-200 cursor-pointer {{ request()->routeIs('comments.search') ? 'font-bold text-gray-200' : '' }}">Search</a>
-                    <span class="cursor-not-allowed">Help</span>
-                @elseif ($isNotesSection)
-                    <a href="{{ route('notes.index') }}"
-                        class="hover:text-gray-200 cursor-pointer {{ request()->routeIs('notes.index') ? 'font-bold text-gray-200' : '' }}">Notes</a>
-                    <a href="{{ route('posts.index') }}" class="hover:text-gray-200 cursor-pointer">Posts</a>
-                    <a href="{{ route('notes.changes') }}"
-                        class="hover:text-gray-200 cursor-pointer {{ request()->routeIs('notes.changes') ? 'font-bold text-gray-200' : '' }}">Changes</a>
-                    <span class="cursor-not-allowed">Help</span>
-                @else
-                    <a href="{{ route('posts.index') }}"
-                        class="hover:text-gray-200 cursor-pointer {{ request()->routeIs('posts.index') || request()->routeIs('posts.show') ? 'font-bold text-gray-200' : '' }}">Listing</a>
-                    @auth
-                        <a href="{{ auth()->user()->isAdmin() ? '/admin/posts/create' : route('upload.create') }}"
-                            class="hover:text-gray-200 cursor-pointer">Upload</a>
-                    @else
-                        <a href="{{ route('login') }}" class="hover:text-gray-200 cursor-pointer">Upload</a>
-                    @endauth
-                    <span class="cursor-not-allowed">Hot</span>
-                    @auth
-                        <a href="{{ route('favorites.index') }}" class="hover:text-gray-200 cursor-pointer">Favorites</a>
-                        <span class="cursor-not-allowed">Fav groups</span>
-                        <span class="cursor-not-allowed">Saved searches</span>
-                    @endauth
-                    <span class="cursor-not-allowed">Changes</span>
-                    <span class="cursor-not-allowed">Help</span>
-                @endif
+                @include('partials.nav-sub')
+            </div>
+        </div>
+
+        {{-- Mobile: menu hamburger --}}
+        <div id="mobile-menu" class="hidden md:hidden border-t border-green-800">
+            <div class="px-4 py-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium">
+                @include('partials.nav-main')
+            </div>
+            <div class="bg-green-700/70 border-t border-green-300 px-4 py-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
+                @include('partials.nav-sub')
             </div>
         </div>
     </header>
 
-    <div class="w-full px-6 py-6 overflow-x-hidden">
+    <div class="w-full px-3 md:px-6 py-4 md:py-6 overflow-x-hidden">
         @if (session('status'))
             <div class="mb-4 px-4 py-2 rounded bg-sky-800 text-white text-sm">{{ session('status') }}</div>
         @endif
         @yield('content')
     </div>
+
+    <script>
+        (function() {
+            const btn = document.getElementById('mobile-menu-btn');
+            const menu = document.getElementById('mobile-menu');
+            const iconOpen = document.getElementById('menu-icon-open');
+            const iconClose = document.getElementById('menu-icon-close');
+            if (!btn || !menu) return;
+
+            btn.addEventListener('click', () => {
+                const open = menu.classList.toggle('hidden') === false;
+                iconOpen.classList.toggle('hidden', open);
+                iconClose.classList.toggle('hidden', !open);
+                btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
+        })();
+    </script>
 </body>
 
 </html>

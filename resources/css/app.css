@@ -252,3 +252,28 @@
     right: -6px;
     bottom: -6px;
 }
+
+/* --- Thumbnail grid (halaman posts) ------------------------------------- */
+/* Mobile (<768px): jumlah kolom tetap, kotak thumbnail mengikuti lebar kolom */
+#thumb-grid[data-size="small"]  { grid-template-columns: repeat(3, minmax(0, 1fr)); --thumb-size: 110px; }
+#thumb-grid[data-size="medium"] { grid-template-columns: repeat(2, minmax(0, 1fr)); --thumb-size: 200px; }
+#thumb-grid[data-size="large"]  { grid-template-columns: repeat(1, minmax(0, 1fr)); --thumb-size: 300px; }
+#thumb-grid[data-size="huge"]   { grid-template-columns: repeat(1, minmax(0, 1fr)); --thumb-size: 400px; }
+#thumb-grid[data-size="gigantic"] { grid-template-columns: repeat(1, minmax(0, 1fr)); --thumb-size: 550px; }
+#thumb-grid[data-size="absurd"]   { grid-template-columns: repeat(1, minmax(0, 1fr)); --thumb-size: 800px; }
+
+
+#thumb-grid [data-thumb-container] { aspect-ratio: 1 / 1; }
+#thumb-grid[data-size="large"] [data-thumb-container] { aspect-ratio: 4 / 3; }
+
+/* Desktop (>=768px): kolom otomatis, tinggi kotak = ukuran piksel */
+@media (min-width: 768px) {
+    #thumb-grid[data-size] {
+        grid-template-columns: repeat(auto-fill, minmax(min(var(--thumb-size), 100%), 1fr));
+    }
+
+    #thumb-grid[data-size] [data-thumb-container] {
+        aspect-ratio: auto;
+        height: var(--thumb-size);
+    }
+}

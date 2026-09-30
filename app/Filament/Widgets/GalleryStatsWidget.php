@@ -4,11 +4,17 @@ namespace App\Filament\Widgets;
 
 use App\Models\Post;
 use App\Models\Tag;
+use App\Models\User;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class GalleryStatsWidget extends BaseWidget
 {
+    protected function getColumns(): int
+    {
+        return 2;
+    }
+
     protected function getStats(): array
     {
         return [
@@ -26,6 +32,11 @@ class GalleryStatsWidget extends BaseWidget
                 ->description('Unique tags in use')
                 ->icon('heroicon-o-tag')
                 ->color('info'),
+
+            Stat::make('Total Users', User::count())
+                ->description('Total users in the system')
+                ->icon('heroicon-o-user')
+                ->color('danger'),
         ];
     }
 }
