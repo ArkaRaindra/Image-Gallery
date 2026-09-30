@@ -21,7 +21,13 @@ class MakeAdmin extends Command
             return self::FAILURE;
         }
 
-        $user->role = 'admin';
+        if ($user->isOwner()) {
+            $this->error('The owner cannot be changed to admin. Transfer ownership first with users:make-owner.');
+
+            return self::FAILURE;
+        }
+
+        $user->role = User::ROLE_ADMIN;
         $user->save();
 
         $this->info("{$user->name} ({$user->email}) is now an admin.");

@@ -39,7 +39,7 @@
                     @php
                         $votedDirection = $votedComments[$comment->id] ?? null;
                         $canEdit = auth()->id() && auth()->id() === $comment->user_id;
-                        $isAdmin = auth()->user()?->isAdmin();
+                        $canModerate = auth()->user()?->isModerator();
                     @endphp
                     <div class="flex gap-6">
                         {{-- Kolom kiri: author + waktu --}}
@@ -105,7 +105,7 @@
                                         class="text-sky-700 hover:underline">Reply</a>
                                 @endif
 
-                                @if ($canEdit || $isAdmin)
+                                @if ($canEdit || $canModerate)
                                     <details class="relative">
                                         <summary
                                             class="list-none cursor-pointer text-gray-500 hover:text-gray-800 select-none">
@@ -116,7 +116,7 @@
                                                 <a href="{{ route('posts.show', $post) }}#comments"
                                                     class="block px-3 py-1 text-sky-700 hover:bg-gray-100">Edit</a>
                                             @endif
-                                            @if ($isAdmin)
+                                            @if ($canModerate)
                                                 <form method="POST" action="{{ route('comments.destroy', $comment) }}"
                                                     onsubmit="return confirm('Delete this comment?')">
                                                     @csrf

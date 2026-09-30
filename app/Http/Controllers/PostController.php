@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Post;
 use App\Models\Tag;
 use App\Services\PostSearchService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -127,6 +128,17 @@ class PostController extends Controller
         return response()->json([
             'thumbnail_url' => \Illuminate\Support\Facades\Storage::disk('public')->url($path),
         ]);
+    }
+
+    public function destroy(Request $request, Post $post): RedirectResponse
+    {
+        abort_unless($request->user()->isModerator(), 403);
+
+        $post->delete();
+
+        return redirect()
+            ->route('posts.index', array_filter(['tags' => $request->string('tags')->toString()]))
+            ->with('status', 'Post deleted.');
     }
 
     protected function resolveSingleTag(string $tagsQuery): ?Tag

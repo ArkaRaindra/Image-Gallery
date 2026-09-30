@@ -69,7 +69,7 @@
                         <a href="{{ route('posts.show', $comment->post) }}#comments"
                             class="text-sky-700 hover:underline">Reply</a>
                     @endif
-                    @if (auth()->user()?->isAdmin())
+                    @if (auth()->user()?->isModerator())
                         <form method="POST" action="{{ route('comments.destroy', $comment) }}"
                             onsubmit="return confirm('Delete this comment?')">
                             @csrf

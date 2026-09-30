@@ -14,7 +14,7 @@
         </div>
         <div>
             <h1 class="text-xl font-bold text-sky-700">{{ $profileUser->name }}</h1>
-            <p class="text-sm text-gray-600">{{ ucfirst($profileUser->role) }}</p>
+            <p class="text-sm text-gray-600">{{ $profileUser->roleLabel() }}</p>
         </div>
     </div>
 

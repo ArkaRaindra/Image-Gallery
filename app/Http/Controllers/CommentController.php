@@ -66,7 +66,7 @@ class CommentController extends Controller
 
     public function destroy(Request $request, Comment $comment): RedirectResponse
     {
-        abort_unless($request->user()->isAdmin(), 403);
+        abort_unless($request->user()->isModerator(), 403);
 
         $post = $comment->post;
         $comment->delete();
