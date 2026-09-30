@@ -10,7 +10,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
-<body class="bg-gallery-green text-gray-900 min-h-screen">
+<body class="bg-gallery-green text-gray-900 min-h-screen flex flex-col">
     @php
         $isAuthSection = request()->routeIs('login') || request()->routeIs('register');
         $isAccountSection = request()->routeIs('account.*');
@@ -65,6 +65,12 @@
         @endif
         @yield('content')
     </div>
+
+    <footer class="bg-gallery-green border-t-2 mt-12 border-green-700 text-black text-xs">
+        <div class="w-full px-4 md:px-6 py-3 flex items-center justify-center">
+            <p class="text-xl md:text-ms py-4 text-center text-black">Footer</p>
+        </div>
+    </footer>
 
     <script>
         (function() {
