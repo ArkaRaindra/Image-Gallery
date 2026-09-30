@@ -12,9 +12,9 @@ class ProfileController extends Controller
     public function show(User $user)
     {
         $stats = [
-            'posts' => Post::where('uploader_id', $user->id)->count(),
+            'posts' => Post::approved()->where('uploader_id', $user->id)->count(),
             'comments' => Comment::where('user_id', $user->id)->count(),
-            'favorites' => $user->favorites()->count(),
+            'favorites' => $user->favorites()->approved()->count(),
         ];
 
         $recentPosts = Post::where('uploader_id', $user->id)
@@ -26,6 +26,7 @@ class ProfileController extends Controller
         return view('users.show', [
             'profileUser' => $user,
             'stats' => $stats,
+            'statLinks' => $user->statLinks(),
             'recentPosts' => $recentPosts,
         ]);
     }

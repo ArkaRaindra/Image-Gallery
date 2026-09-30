@@ -32,15 +32,24 @@
             </tr>
             <tr>
                 <td class="pr-6 py-0.5 text-gray-600">Posts</td>
-                <td>{{ $stats['posts'] }}</td>
+                <td>
+                    <a href="{{ $statLinks['uploads'] }}"
+                        class="text-sky-700 hover:underline">{{ $stats['posts'] }}</a>
+                </td>
             </tr>
             <tr>
                 <td class="pr-6 py-0.5 text-gray-600">Comments</td>
-                <td>{{ $stats['comments'] }}</td>
+                <td>
+                    <a href="{{ $statLinks['comments'] }}"
+                        class="text-sky-700 hover:underline">{{ $stats['comments'] }}</a>
+                </td>
             </tr>
             <tr>
                 <td class="pr-6 py-0.5 text-gray-600">Favorites</td>
-                <td>{{ $stats['favorites'] }}</td>
+                <td>
+                    <a href="{{ $statLinks['favorites'] }}"
+                        class="text-sky-700 hover:underline">{{ $stats['favorites'] }}</a>
+                </td>
             </tr>
         </tbody>
     </table>

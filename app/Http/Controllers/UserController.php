@@ -58,15 +58,7 @@ class UserController extends Controller
                 'comments' => Comment::where('user_id', $user->id)->count(),
                 'forum_posts' => 0,
             ],
-            // Where each stat leads to. null = nothing to open (feature not built yet).
-            'links' => [
-                'uploads' => route('posts.index', ['tags' => 'user:' . $user->searchName()]),
-                'tag_edits' => null,
-                'note_edits' => route('notes.changes', ['updater' => $user->name]),
-                'favorites' => route('posts.index', ['tags' => 'fav:' . $user->searchName()]),
-                'comments' => route('comments.search', ['commenter' => $user->name, 'user_id' => $user->id]),
-                'forum_posts' => null,
-            ],
+            'links' => $user->statLinks(),
         ]);
     }
 }

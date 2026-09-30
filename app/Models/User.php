@@ -137,6 +137,25 @@ class User extends Authenticatable implements FilamentUser
         return str_replace(' ', '_', (string) $this->name);
     }
 
+    /**
+     * Where each profile stat leads to. Shared by the username hover card and
+     * the account page so both open the same pages. null = nothing to open
+     * (the feature does not exist yet).
+     *
+     * @return array<string, string|null>
+     */
+    public function statLinks(): array
+    {
+        return [
+            'uploads' => route('posts.index', ['tags' => 'user:' . $this->searchName()]),
+            'tag_edits' => null,
+            'note_edits' => route('notes.changes', ['updater' => $this->name]),
+            'favorites' => route('posts.index', ['tags' => 'fav:' . $this->searchName()]),
+            'comments' => route('comments.search', ['commenter' => $this->name, 'user_id' => $this->id]),
+            'forum_posts' => null,
+        ];
+    }
+
     public function roleLevel(): int
     {
         return self::ROLE_LEVELS[$this->role] ?? 0;

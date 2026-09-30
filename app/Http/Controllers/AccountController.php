@@ -15,14 +15,15 @@ class AccountController extends Controller
         $user = $request->user();
 
         $stats = [
-            'posts' => Post::where('uploader_id', $user->id)->count(),
+            'posts' => Post::approved()->where('uploader_id', $user->id)->count(),
             'comments' => Comment::where('user_id', $user->id)->count(),
-            'favorites' => $user->favorites()->count(),
+            'favorites' => $user->favorites()->approved()->count(),
         ];
 
         return view('account.show' , [
             'user' => $user,
             'stats' => $stats,
+            'statLinks' => $user->statLinks(),
             'recentFavorites' => $user->favorites()->take(5)->get(),
             'recentPosts' => Post::where('uploader_id', $user->id)->latest()->take(5)->get(),
         ]);
