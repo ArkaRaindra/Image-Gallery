@@ -128,6 +128,15 @@ class User extends Authenticatable implements FilamentUser
         return array_combine($roles, array_map('ucfirst', $roles));
     }
 
+    /**
+     * The username as it is written inside a search token (user:name, fav:name).
+     * Tokens are split on spaces, so spaces become underscores.
+     */
+    public function searchName(): string
+    {
+        return str_replace(' ', '_', (string) $this->name);
+    }
+
     public function roleLevel(): int
     {
         return self::ROLE_LEVELS[$this->role] ?? 0;

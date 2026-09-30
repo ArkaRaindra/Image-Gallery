@@ -30,6 +30,10 @@ class CommentsPageController extends Controller
             $query->where('author_name', 'like', "%{$commenter}%");
         }
 
+        if ($userId = $request->integer('user_id')) {
+            $query->where('user_id', $userId);
+        }
+
         if ($text = $request->string('text')->toString()) {
             $query->where('body', 'like', "%{$text}%");
         }

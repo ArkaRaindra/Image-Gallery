@@ -151,7 +151,7 @@ class PostController extends Controller
 
         $token = $tokens->first();
 
-        if (Str::startsWith($token, ['-', 'rating:'])) {
+        if (Str::startsWith($token, ['-', 'rating:', 'user:', 'fav:'])) {
             return null;
         }
 

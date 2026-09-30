@@ -733,13 +733,20 @@ function setupUserHoverCard() {
         header.appendChild(info);
         card.appendChild(header);
 
-        const grid = createUserCardElement('div', 'grid grid-cols-3 gap-y-3 text-center');
+                const grid = createUserCardElement('div', 'grid grid-cols-3 gap-y-3 text-center');
         USER_CARD_STATS.forEach(([key, label]) => {
-            const cell = createUserCardElement('div');
+            const url = data.links?.[key];
+            const cell = url
+                ? createUserCardElement('a', 'group block rounded px-1 py-0.5 hover:bg-gray-700/60')
+                : createUserCardElement('div', 'px-1 py-0.5');
+            if (url) cell.href = url;
+
             cell.appendChild(
                 createUserCardElement('div', 'text-base font-semibold text-gray-100', formatCount(data.stats[key] ?? 0)),
             );
-            cell.appendChild(createUserCardElement('div', 'text-gray-400', label));
+            cell.appendChild(
+                createUserCardElement('div', url ? 'text-gray-400 group-hover:text-gray-200' : 'text-gray-400', label),
+            );
             grid.appendChild(cell);
         });
         card.appendChild(grid);

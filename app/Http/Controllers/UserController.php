@@ -51,12 +51,21 @@ class UserController extends Controller
             'name_class' => $user->roleDarkTextClass(),
             'joined_at' => $user->created_at?->format('Y-m-d'),
             'stats' => [
-                'uploads' => Post::where('uploader_id', $user->id)->count(),
+                'uploads' => Post::approved()->where('uploader_id', $user->id)->count(),
                 'tag_edits' => 0,
                 'note_edits' => NoteVersion::where('updater_id', $user->id)->count(),
-                'favorites' => $user->favorites()->count(),
+                'favorites' => $user->favorites()->approved()->count(),
                 'comments' => Comment::where('user_id', $user->id)->count(),
                 'forum_posts' => 0,
+            ],
+            // Where each stat leads to. null = nothing to open (feature not built yet).
+            'links' => [
+                'uploads' => route('posts.index', ['tags' => 'user:' . $user->searchName()]),
+                'tag_edits' => null,
+                'note_edits' => route('notes.changes', ['updater' => $user->name]),
+                'favorites' => route('posts.index', ['tags' => 'fav:' . $user->searchName()]),
+                'comments' => route('comments.search', ['commenter' => $user->name, 'user_id' => $user->id]),
+                'forum_posts' => null,
             ],
         ]);
     }

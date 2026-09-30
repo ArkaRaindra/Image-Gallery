@@ -108,10 +108,17 @@ class NoteController extends Controller
     {
         $query = NoteVersion::query()->with(['note.post', 'updater'])->latest('id');
 
+        $updaterName = $request->string('updater')->toString();
+
+        if ($updaterName !== '') {
+            $query->whereHas('updater', fn ($q) => $q->where('name', $updaterName));
+        }
+
         $versions = $query->paginate(25)->withQueryString();
 
         return view('notes.changes', [
             'versions' => $versions,
+            'updaterName' => $updaterName,
         ]);
     }
 

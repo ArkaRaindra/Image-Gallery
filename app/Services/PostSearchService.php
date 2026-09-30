@@ -20,6 +20,8 @@ class PostSearchService
             match (true) {
                 Str::startsWith($token, '-') => $this->applyExclude($builder, Str::after($token, '-')),
                 Str::startsWith($token, 'rating:') => $this->applyRating($builder, Str::after($token, 'rating:')),
+                Str::startsWith($token, 'user:') => $this->applyUploader($builder, Str::after($token, 'user:')),
+                Str::startsWith($token, 'fav:') => $this->applyFavoritedBy($builder, Str::after($token, 'fav:')),
                 default => $this->applyInclude($builder, $token),
             };
         }
@@ -46,6 +48,26 @@ class PostSearchService
         if (in_array($rating, ['general', 'sensitive', 'questionable', 'explicit'], true)) {
             $builder->where('rating', $rating);
         }
+    }
+
+    /**
+     * user:name - posts uploaded by the user. Underscores stand for spaces.
+     */
+    protected function applyUploader(Builder $builder, string $name): void
+    {
+        $builder->whereHas('uploader', function (Builder $q) use ($name) {
+            $q->whereRaw("REPLACE(users.name, ' ', '_') = ?", [$name]);
+        });
+    }
+
+    /**
+     * fav:name - posts the user has favorited. Underscores stand for spaces.
+     */
+    protected function applyFavoritedBy(Builder $builder, string $name): void
+    {
+        $builder->whereHas('favoritedBy', function (Builder $q) use ($name) {
+            $q->whereRaw("REPLACE(users.name, ' ', '_') = ?", [$name]);
+        });
     }
 
     protected function matchTagName(Builder $q, string $tag): void

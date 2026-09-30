@@ -5,6 +5,13 @@
 @section('content')
     <h1 class="text-2xl font-bold mb-4">Note Changes</h1>
 
+    @if (!empty($updaterName))
+        <p class="text-sm text-gray-600 mb-4">
+            Changes by <span class="font-semibold">{{ $updaterName }}</span>
+            &middot; <a href="{{ route('notes.changes') }}" class="text-sky-700 hover:underline">Show all</a>
+        </p>
+    @endif
+
     <div class="overflow-x-auto bg-white border border-gray-800 rounded">
         <table class="w-full text-sm border-collapse">
             <thead>
