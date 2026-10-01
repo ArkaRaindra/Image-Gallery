@@ -37,6 +37,12 @@
                         class="text-sky-700 hover:underline">{{ $stats['posts'] }}</a>
                 </td>
             </tr>
+            @if ($profileUser->hasModerationStats())
+                <tr>
+                    <td class="pr-6 py-0.5 text-gray-600">Deleted Posts</td>
+                    <td>{{ $stats['deleted_posts'] }}</td>
+                </tr>
+            @endif
             <tr>
                 <td class="pr-6 py-0.5 text-gray-600">Comments</td>
                 <td>
@@ -51,6 +57,12 @@
                         class="text-sky-700 hover:underline">{{ $stats['favorites'] }}</a>
                 </td>
             </tr>
+            @if ($profileUser->hasModerationStats())
+                <tr>
+                    <td class="pr-6 py-0.5 text-gray-600">Appeals</td>
+                    <td>{{ $stats['appeals'] }}</td>
+                </tr>
+            @endif
         </tbody>
     </table>
 

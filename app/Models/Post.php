@@ -31,10 +31,13 @@ class Post extends Model
         'description',
         'score',
         'is_approved',
+        'approved_by',
+        'approved_at',
     ];
 
     protected $casts = [
         'is_approved' => 'boolean',
+        'approved_at' => 'datetime',
     ];
 
     public const VIDEO_EXTENSIONS = ['mp4', 'webm', 'mov', 'avi', 'mkv'];
@@ -75,6 +78,28 @@ class Post extends Model
 
     protected static function booted(): void
     {
+        static::saving(function (self $post) {
+            if (! $post->isDirty('is_approved')) {
+                return;
+            }
+
+            if (! $post->is_approved) {
+                $post->approved_by = null;
+                $post->approved_at = null;
+
+                return;
+            }
+
+            // A post only counts as approved by someone when another user
+            // (an admin) lets it through. An admin's own upload is not an approval.
+            $approverId = auth()->id();
+
+            if ($approverId && $approverId !== $post->uploader_id) {
+                $post->approved_by = $approverId;
+                $post->approved_at = now();
+            }
+        });
+
         static::deleting(function (self $post) {
             DeletionReport::closeForComments(
                 Comment::withoutGlobalScopes()->where('post_id', $post->id)->pluck('id'),
@@ -84,6 +109,7 @@ class Post extends Model
 
         static::deleted(function (self $post) {
             DeletionReport::closeForSubject($post, 'The post was deleted directly.');
+            DeletionReport::logDirectDeletion($post);
             Tag::recalculateAllPostCounts();
         });
     }
@@ -91,6 +117,11 @@ class Post extends Model
     public function uploader(): BelongsTo
     {
         return $this->belongsTo(User::class, 'uploader_id');
+    }
+
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 
     public function tags(): BelongsToMany

@@ -166,6 +166,56 @@ class DeletionReport extends Model
     }
 
     /**
+     * Keep a record when an admin or the owner deletes a post straight away,
+     * so the deletion also shows up in their "Deleted Posts" count. Nothing is
+     * added when the post was removed through a request that is already approved.
+     */
+    public static function logDirectDeletion(Post $post): void
+    {
+        $actor = auth()->user();
+
+        if (! $actor?->isAdmin()) {
+            return;
+        }
+
+        $alreadyRecorded = static::query()
+            ->forSubject($post)
+            ->where('status', self::STATUS_APPROVED)
+            ->exists();
+
+        if ($alreadyRecorded) {
+            return;
+        }
+
+        static::create([
+            'reportable_type' => $post->getMorphClass(),
+            'reportable_id' => $post->getKey(),
+            'reporter_id' => $actor->getKey(),
+            'subject_label' => static::labelFor($post),
+            'reason' => 'Deleted directly.',
+            'status' => self::STATUS_APPROVED,
+            'reviewed_by' => $actor->getKey(),
+            'reviewed_at' => now(),
+        ]);
+    }
+
+    /**
+     * Number of deleted posts this user took part in: requests they filed (a
+     * moderator) or approved (an admin or the owner) that ended in a deletion,
+     * plus the posts an admin deleted directly. Each post is counted once.
+     */
+    public static function deletedPostsCountFor(User $user): int
+    {
+        return static::query()
+            ->where('reportable_type', (new Post)->getMorphClass())
+            ->where('status', self::STATUS_APPROVED)
+            ->where(fn (Builder $query) => $query
+                ->where('reporter_id', $user->getKey())
+                ->orWhere('reviewed_by', $user->getKey()))
+            ->count();
+    }
+
+    /**
      * Close the pending requests of a subject that was deleted directly
      * (for example by an admin), so they do not stay in the queue.
      */

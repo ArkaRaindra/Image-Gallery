@@ -57,10 +57,12 @@
                         class="text-sky-700 hover:underline">{{ $stats['posts'] }}</a>
                 </td>
             </tr>
-            <tr>
-                <td class="pr-6 py-0.5 text-gray-600">Deleted Posts</td>
-                <td>0</td>
-            </tr>
+            @if ($user->hasModerationStats())
+                <tr>
+                    <td class="pr-6 py-0.5 text-gray-600">Deleted Posts</td>
+                    <td>{{ $stats['deleted_posts'] }}</td>
+                </tr>
+            @endif
             <tr>
                 <td class="pr-6 py-0.5 text-gray-600">Favorites</td>
                 <td>
@@ -99,10 +101,12 @@
                         class="text-sky-700 hover:underline">{{ $stats['comments'] }}</a>
                 </td>
             </tr>
-            <tr>
-                <td class="pr-6 py-0.5 text-gray-600">Appeals</td>
-                <td>0</td>
-            </tr>
+            @if ($user->hasModerationStats())
+                <tr>
+                    <td class="pr-6 py-0.5 text-gray-600">Appeals</td>
+                    <td>{{ $stats['appeals'] }}</td>
+                </tr>
+            @endif
             <tr>
                 <td class="pr-6 py-0.5 text-gray-600">Flags</td>
                 <td>0</td>
@@ -153,7 +157,7 @@
                     @endif
                 </a>
             @empty
-                <p class="text-sm text-gray-500">You haven't uploaded any posts yet.</p>
+                <p class="text-sm text-gray-500">You have no approved posts yet.</p>
             @endforelse
         </div>
     </div>

@@ -251,6 +251,35 @@ class User extends Authenticatable implements FilamentUser
         return $this->isModerator() && ! $this->isAdmin();
     }
 
+    /**
+     * Moderators, admins and the owner have moderation numbers on their
+     * account and profile pages (deleted posts, appeals).
+     */
+    public function hasModerationStats(): bool
+    {
+        return $this->isModerator();
+    }
+
+    /**
+     * @return array{deleted_posts: int, appeals: int}
+     */
+    public function moderationStats(): array
+    {
+        return [
+            'deleted_posts' => DeletionReport::deletedPostsCountFor($this),
+            'appeals' => $this->approvedPostsCount(),
+        ];
+    }
+
+    /**
+     * Posts this user approved to appear on the public site. Posts that are
+     * deleted or hidden by a pending deletion request are not counted.
+     */
+    public function approvedPostsCount(): int
+    {
+        return Post::query()->approved()->where('approved_by', $this->getKey())->count();
+    }
+
     public function outranks(self $other): bool
     {
         return $this->roleLevel() > $other->roleLevel();

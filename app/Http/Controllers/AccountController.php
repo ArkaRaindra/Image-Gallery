@@ -20,12 +20,16 @@ class AccountController extends Controller
             'favorites' => $user->favorites()->approved()->count(),
         ];
 
-        return view('account.show' , [
+        if ($user->hasModerationStats()) {
+            $stats += $user->moderationStats();
+        }
+
+        return view('account.show', [
             'user' => $user,
             'stats' => $stats,
             'statLinks' => $user->statLinks(),
             'recentFavorites' => $user->favorites()->take(5)->get(),
-            'recentPosts' => Post::where('uploader_id', $user->id)->latest()->take(5)->get(),
+            'recentPosts' => Post::approved()->where('uploader_id', $user->id)->latest()->take(5)->get(),
         ]);
     }
 
