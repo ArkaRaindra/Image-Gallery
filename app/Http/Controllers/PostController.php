@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DeletionReport;
 use App\Models\Post;
 use App\Models\Tag;
 use App\Services\PostSearchService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class PostController extends Controller
@@ -25,7 +27,7 @@ class PostController extends Controller
 
         $matchingPostIds = $this->search->search($tagsQuery)->pluck('id');
 
-                $sidebarTags = blank($tagsQuery)
+        $sidebarTags = blank($tagsQuery)
             ? Tag::where('post_count', '>', 0)->orderByDesc('post_count')->limit(40)->get()
             : Tag::whereHas('posts', fn ($q) => $q->whereIn('posts.id', $matchingPostIds))
                 ->where('post_count', '>', 0)
@@ -52,8 +54,8 @@ class PostController extends Controller
 
         $scopedIds = $this->search->search($tagsQuery)->pluck('id');
 
-        $prevId = $scopedIds->filter(fn($id) => $id > $post->id)->min();
-        $nextId = $scopedIds->filter(fn($id) => $id < $post->id)->max();
+        $prevId = $scopedIds->filter(fn ($id) => $id > $post->id)->min();
+        $nextId = $scopedIds->filter(fn ($id) => $id < $post->id)->max();
 
         return view('posts.show', [
             'post' => $post,
@@ -122,23 +124,36 @@ class PostController extends Controller
         ]);
 
         if ($oldThumbnail && $oldThumbnail !== $post->file_path && $oldThumbnail !== $path) {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete($oldThumbnail);
+            Storage::disk('public')->delete($oldThumbnail);
         }
 
         return response()->json([
-            'thumbnail_url' => \Illuminate\Support\Facades\Storage::disk('public')->url($path),
+            'thumbnail_url' => Storage::disk('public')->url($path),
         ]);
     }
 
     public function destroy(Request $request, Post $post): RedirectResponse
     {
-        abort_unless($request->user()->isModerator(), 403);
+        $user = $request->user();
 
-        $post->delete();
+        abort_unless($user->isModerator(), 403);
 
-        return redirect()
-            ->route('posts.index', array_filter(['tags' => $request->string('tags')->toString()]))
-            ->with('status', 'Post deleted.');
+        $redirect = redirect()
+            ->route('posts.index', array_filter(['tags' => $request->string('tags')->toString()]));
+
+        if ($user->canDeleteDirectly()) {
+            $post->delete();
+
+            return $redirect->with('status', 'Post deleted.');
+        }
+
+        $data = $request->validateWithBag('deletionRequest', [
+            'reason' => ['required', 'string', 'min:5', 'max:1000'],
+        ]);
+
+        DeletionReport::fileFor($post, $user, $data['reason']);
+
+        return $redirect->with('status', 'Deletion request sent to the admins. The post is hidden until they review it.');
     }
 
     protected function resolveSingleTag(string $tagsQuery): ?Tag
@@ -167,13 +182,13 @@ class PostController extends Controller
         $character = ($grouped->get('character', collect())->pluck('name')->join('_'));
         $copyright = ($grouped->get('copyright', collect())->pluck('name')->join('_'));
         $artist = ($grouped->get('artist', collect())->pluck('name')->join('_'));
-        $prefix = collect([$character, $copyright, $artist ? 'drawn_by_' . $artist : null])->filter()->implode('_');
+        $prefix = collect([$character, $copyright, $artist ? 'drawn_by_'.$artist : null])->filter()->implode('_');
 
         $baseName = pathinfo($post->file_name, PATHINFO_FILENAME);
         $extension = pathinfo($post->file_name, PATHINFO_EXTENSION);
 
-        $fileName = '__' . $prefix . '__' . $baseName . '.' . $extension;
+        $fileName = '__'.$prefix.'__'.$baseName.'.'.$extension;
 
-        return \Illuminate\Support\Facades\Storage::disk('public')->download($post->file_path, $fileName);
+        return Storage::disk('public')->download($post->file_path, $fileName);
     }
 }

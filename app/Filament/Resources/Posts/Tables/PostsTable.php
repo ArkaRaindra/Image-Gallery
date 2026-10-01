@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Posts\Tables;
 
+use App\Models\DeletionReport;
 use App\Models\Tag;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
@@ -15,12 +16,17 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class PostsTable
 {
     public static function configure(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->withExists([
+                'deletionReports as has_pending_deletion' => fn (Builder $reports) => $reports
+                    ->where('status', DeletionReport::STATUS_PENDING),
+            ]))
             ->columns([
                 ImageColumn::make('thumbnail_path')
                     ->label('Preview')
@@ -38,6 +44,13 @@ class PostsTable
                 IconColumn::make('is_approved')
                     ->boolean()
                     ->label('Approved'),
+                IconColumn::make('has_pending_deletion')
+                    ->label('Deletion requested')
+                    ->boolean()
+                    ->trueIcon(Heroicon::ExclamationTriangle)
+                    ->trueColor('danger')
+                    ->falseIcon(Heroicon::Minus)
+                    ->falseColor('gray'),
                 TextColumn::make('tags.name')
                     ->badge()
                     ->limit(5),
@@ -47,7 +60,7 @@ class PostsTable
             ])
             ->filters([
                 TernaryFilter::make('is_approved'),
-                SelectFilter::make('uplaoder')
+                SelectFilter::make('uploader')
                     ->relationship('uploader', 'name')
                     ->searchable()
                     ->preload(),

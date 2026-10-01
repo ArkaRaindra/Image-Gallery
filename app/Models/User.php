@@ -147,10 +147,10 @@ class User extends Authenticatable implements FilamentUser
     public function statLinks(): array
     {
         return [
-            'uploads' => route('posts.index', ['tags' => 'user:' . $this->searchName()]),
+            'uploads' => route('posts.index', ['tags' => 'user:'.$this->searchName()]),
             'tag_edits' => null,
             'note_edits' => route('notes.changes', ['updater' => $this->name]),
-            'favorites' => route('posts.index', ['tags' => 'fav:' . $this->searchName()]),
+            'favorites' => route('posts.index', ['tags' => 'fav:'.$this->searchName()]),
             'comments' => route('comments.search', ['commenter' => $this->name, 'user_id' => $this->id]),
             'forum_posts' => null,
         ];
@@ -226,11 +226,29 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
-     * Moderator or above (admin, owner). Can delete posts and comments.
+     * Moderator or above (admin, owner). Can remove posts and comments, but a
+     * plain moderator only by filing a deletion request (see mustRequestDeletion()).
      */
     public function isModerator(): bool
     {
         return $this->hasRoleAtLeast(self::ROLE_MODERATOR);
+    }
+
+    /**
+     * Admin or owner: posts and comments are deleted straight away.
+     */
+    public function canDeleteDirectly(): bool
+    {
+        return $this->isAdmin();
+    }
+
+    /**
+     * A moderator below admin level cannot delete a post or comment. They
+     * file a deletion request with a reason, and an admin or owner decides.
+     */
+    public function mustRequestDeletion(): bool
+    {
+        return $this->isModerator() && ! $this->isAdmin();
     }
 
     public function outranks(self $other): bool

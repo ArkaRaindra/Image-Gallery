@@ -41,18 +41,27 @@ class Tag extends Model
         return $query->where('category', $category);
     }
 
-       public static function recalculateAllPostCounts(): void
+    /**
+     * Count only approved posts that are not hidden by a pending deletion request.
+     */
+    public static function recalculateAllPostCounts(): void
     {
         DB::statement('
             UPDATE tags
-            LEFT JOIN (
-                SELECT pt.tag_id, COUNT(*) AS cnt
+            SET post_count = (
+                SELECT COUNT(*)
                 FROM post_tags pt
                 INNER JOIN posts p ON p.id = pt.post_id
-                WHERE p.is_approved = 1
-                GROUP BY pt.tag_id
-            ) counts ON counts.tag_id = tags.id
-            SET tags.post_count = COALESCE(counts.cnt, 0)
-        ');
+                WHERE pt.tag_id = tags.id
+                    AND p.is_approved = 1
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM deletion_reports dr
+                        WHERE dr.reportable_id = p.id
+                            AND dr.reportable_type = ?
+                            AND dr.status = ?
+                    )
+            )
+        ', [(new Post)->getMorphClass(), DeletionReport::STATUS_PENDING]);
     }
 }

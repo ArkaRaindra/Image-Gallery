@@ -63,6 +63,9 @@
         @if (session('status'))
             <div class="mb-4 px-4 py-2 rounded bg-sky-800 text-white text-sm">{{ session('status') }}</div>
         @endif
+        @if ($errors->deletionRequest->any())
+            <div class="mb-4 px-4 py-2 rounded bg-red-700 text-white text-sm">{{ $errors->deletionRequest->first() }}</div>
+        @endif
         @yield('content')
     </div>
 

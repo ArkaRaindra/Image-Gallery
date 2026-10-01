@@ -122,13 +122,11 @@
                                                     class="block px-3 py-1 text-sky-700 hover:bg-gray-100">Edit</a>
                                             @endif
                                             @if ($canModerate)
-                                                <form method="POST" action="{{ route('comments.destroy', $comment) }}"
-                                                    onsubmit="return confirm('Delete this comment?')">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit"
-                                                        class="block w-full text-left px-3 py-1 text-red-600 hover:bg-gray-100 cursor-pointer">Delete</button>
-                                                </form>
+                                                @include('partials.delete-action', [
+                                                    'action' => route('comments.destroy', $comment),
+                                                    'what' => 'comment',
+                                                    'triggerClass' => 'block w-full text-left px-3 py-1 text-red-600 hover:bg-gray-100 cursor-pointer',
+                                                ])
                                             @endif
                                         </div>
                                     </details>

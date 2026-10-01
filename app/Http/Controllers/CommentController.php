@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Comment;
+use App\Models\DeletionReport;
 use App\Models\Post;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -26,7 +27,7 @@ class CommentController extends Controller
         ]);
 
         $tagsQuery = $request->string('tags')->toString();
-        $url = route('posts.show', ['post' => $post, 'tags' => $tagsQuery]) . '#comments';
+        $url = route('posts.show', ['post' => $post, 'tags' => $tagsQuery]).'#comments';
 
         return redirect($url);
     }
@@ -66,18 +67,32 @@ class CommentController extends Controller
 
     public function destroy(Request $request, Comment $comment): RedirectResponse
     {
-        abort_unless($request->user()->isModerator(), 403);
+        $user = $request->user();
+
+        abort_unless($user->isModerator(), 403);
 
         $post = $comment->post;
-        $comment->delete();
+
+        if ($user->canDeleteDirectly()) {
+            $comment->delete();
+            $status = 'Comment deleted.';
+        } else {
+            $data = $request->validateWithBag('deletionRequest', [
+                'reason' => ['required', 'string', 'min:5', 'max:1000'],
+            ]);
+
+            DeletionReport::fileFor($comment, $user, $data['reason']);
+            $status = 'Deletion request sent to the admins. The comment is hidden until they review it.';
+        }
 
         if ($post) {
             $tagsQuery = $request->string('tags')->toString();
 
-            return redirect(route('posts.show', ['post' => $post, 'tags' => $tagsQuery]) . '#comments');
+            return redirect(route('posts.show', ['post' => $post, 'tags' => $tagsQuery]).'#comments')
+                ->with('status', $status);
         }
 
-        return redirect()->route('comments.index');
+        return redirect()->route('comments.index')->with('status', $status);
     }
 
     public function uploadImage(Request $request): JsonResponse
@@ -108,7 +123,7 @@ class CommentController extends Controller
         if ($post) {
             $tagsQuery = $request->string('tags')->toString();
 
-            return redirect(route('posts.show', ['post' => $post, 'tags' => $tagsQuery]) . '#comments');
+            return redirect(route('posts.show', ['post' => $post, 'tags' => $tagsQuery]).'#comments');
         }
 
         return redirect()->route('comments.index');

@@ -127,15 +127,12 @@
                     </li>
                     @if (auth()->user()?->isModerator())
                         <li>
-                            <form method="POST" action="{{ route('posts.destroy', $post) }}"
-                                onsubmit="return confirm('Delete this post? This cannot be undone.')">
-                                @csrf
-                                @method('DELETE')
-                                <input type="hidden" name="tags" value="{{ $tagQuery }}">
-                                <button type="submit" class="text-red-600 hover:underline text-left cursor-pointer">
-                                    Delete
-                                </button>
-                            </form>
+                            @include('partials.delete-action', [
+                                'action' => route('posts.destroy', $post),
+                                'what' => 'post',
+                                'tagQuery' => $tagQuery,
+                                'triggerClass' => 'text-red-600 hover:underline text-left cursor-pointer',
+                            ])
                         </li>
                     @endif
                 </ul>
@@ -315,14 +312,11 @@
                                                 data-comment-id="{{ $comment->id }}">Edit</button>
                                         @endif
                                         @if (auth()->user()?->isModerator())
-                                            <form method="POST" action="{{ route('comments.destroy', $comment) }}"
-                                                onsubmit="return confirm('Delete this comment?')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <input type="hidden" name="tags" value="{{ $tagQuery }}">
-                                                <button type="submit"
-                                                    class="text-red-600 hover:underline cursor-pointer">Delete</button>
-                                            </form>
+                                            @include('partials.delete-action', [
+                                                'action' => route('comments.destroy', $comment),
+                                                'what' => 'comment',
+                                                'tagQuery' => $tagQuery,
+                                            ])
                                         @endif
                                     </div>
 
@@ -462,15 +456,12 @@
                                                         data-comment-id="{{ $reply->id }}">Edit</button>
                                                 @endif
                                                 @if (auth()->user()?->isModerator())
-                                                    <form method="POST" action="{{ route('comments.destroy', $reply) }}"
-                                                        onsubmit="return confirm('Delete this comment?')" class="inline">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <input type="hidden" name="tags"
-                                                            value="{{ $tagQuery }}">
-                                                        <button type="submit"
-                                                            class="text-red-600 hover:underline cursor-pointer">Delete</button>
-                                                    </form>
+                                                    @include('partials.delete-action', [
+                                                        'action' => route('comments.destroy', $reply),
+                                                        'what' => 'comment',
+                                                        'tagQuery' => $tagQuery,
+                                                        'formClass' => 'inline',
+                                                    ])
                                                 @endif
                                             </div>
 

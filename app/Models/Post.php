@@ -2,12 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\HidePendingDeletionScope;
+use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
+#[ScopedBy(HidePendingDeletionScope::class)]
 class Post extends Model
 {
     use HasFactory;
@@ -71,7 +75,15 @@ class Post extends Model
 
     protected static function booted(): void
     {
+        static::deleting(function (self $post) {
+            DeletionReport::closeForComments(
+                Comment::withoutGlobalScopes()->where('post_id', $post->id)->pluck('id'),
+                'The post was deleted.',
+            );
+        });
+
         static::deleted(function (self $post) {
+            DeletionReport::closeForSubject($post, 'The post was deleted directly.');
             Tag::recalculateAllPostCounts();
         });
     }
@@ -91,6 +103,11 @@ class Post extends Model
     public function comments(): HasMany
     {
         return $this->hasMany(Comment::class)->latest();
+    }
+
+    public function deletionReports(): MorphMany
+    {
+        return $this->morphMany(DeletionReport::class, 'reportable');
     }
 
     public function notes(): HasMany
@@ -130,9 +147,9 @@ class Post extends Model
         $bytes = $this->file_size;
 
         return match (true) {
-            $bytes >= 1_048_576 => round($bytes / 1_048_576, 2) . ' MB',
-            $bytes >= 1024 => round($bytes / 1024, 1) . ' KB',
-            default => $bytes . ' B',
+            $bytes >= 1_048_576 => round($bytes / 1_048_576, 2).' MB',
+            $bytes >= 1024 => round($bytes / 1024, 1).' KB',
+            default => $bytes.' B',
         };
     }
 }

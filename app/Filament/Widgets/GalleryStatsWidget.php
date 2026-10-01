@@ -18,12 +18,12 @@ class GalleryStatsWidget extends BaseWidget
     protected function getStats(): array
     {
         return [
-            Stat::make('Total Posts', Post::count())
+            Stat::make('Total Posts', Post::withoutGlobalScopes()->count())
                 ->description('All posts in the gallery')
                 ->icon('heroicon-o-photo')
                 ->color('success'),
 
-            Stat::make('Pending Posts', Post::where('is_approved', false)->count())
+            Stat::make('Pending Posts', Post::withoutGlobalScopes()->where('is_approved', false)->count())
                 ->description('Awaiting approval')
                 ->icon('heroicon-o-clock')
                 ->color('warning'),
