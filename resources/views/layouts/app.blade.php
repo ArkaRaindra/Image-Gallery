@@ -59,7 +59,7 @@
         </div>
     </header>
 
-    <div class="w-full px-3 md:px-6 py-4 md:py-6 overflow-x-hidden">
+    <div class="flex-1 w-full px-3 md:px-6 py-4 md:py-6 overflow-x-hidden">
         @if (session('status'))
             <div class="mb-4 px-4 py-2 rounded bg-sky-800 text-white text-sm">{{ session('status') }}</div>
         @endif
