@@ -12,6 +12,9 @@ class DatabaseSeeder extends Seeder
 
     /**
      * Seed the application's database.
+     *
+     * The roles seeder runs last because model events are off here: it is what
+     * links the users created above to their Spatie role.
      */
     public function run(): void
     {
@@ -21,5 +24,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+
+        $this->call(RolesAndPermissionsSeeder::class);
     }
 }

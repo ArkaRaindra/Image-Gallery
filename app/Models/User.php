@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Support\Permissions;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
@@ -15,13 +16,15 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable(['name', 'email', 'password', 'avatar_path', 'role'])]
 #[Hidden(['password', 'remember_token', 'owner_slot'])]
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, HasRoles, Notifiable;
 
     public const ROLE_OWNER = 'owner';
 
@@ -89,6 +92,12 @@ class User extends Authenticatable implements FilamentUser
                         'role' => 'There can only be one owner.',
                     ]);
                 }
+            }
+        });
+
+        static::saved(function (self $user): void {
+            if ($user->wasRecentlyCreated || $user->wasChanged('role')) {
+                $user->syncSpatieRole();
             }
         });
 
@@ -280,6 +289,17 @@ class User extends Authenticatable implements FilamentUser
         return Post::query()->approved()->where('approved_by', $this->getKey())->count();
     }
 
+    /**
+     * Mirror the role column onto the Spatie role of the same name.
+     *
+     * The role column stays the source of truth for rank and the single owner
+     * rule; the Spatie role is what carries the permissions.
+     */
+    public function syncSpatieRole(): void
+    {
+        $this->syncRoles([Role::findOrCreate((string) $this->role, 'web')]);
+    }
+
     public function outranks(self $other): bool
     {
         return $this->roleLevel() > $other->roleLevel();
@@ -313,18 +333,33 @@ class User extends Authenticatable implements FilamentUser
     public function becomeOwner(): void
     {
         DB::transaction(function (): void {
-            static::query()
+            $previousOwnerIds = static::query()
                 ->where('role', self::ROLE_OWNER)
                 ->whereKeyNot($this->getKey())
+                ->pluck('id');
+
+            static::query()
+                ->whereKey($previousOwnerIds)
                 ->update(['role' => self::ROLE_ADMIN]);
+
+            static::query()
+                ->whereKey($previousOwnerIds)
+                ->get()
+                ->each(fn (self $previousOwner) => $previousOwner->syncSpatieRole());
 
             $this->role = self::ROLE_OWNER;
             $this->save();
         });
     }
 
+    /**
+     * The owner always gets in. An admin gets in while the admin role holds the
+     * panel permission. Moderators and members never get in, even if the
+     * permission is handed to their role.
+     */
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->isAdmin();
+        return $this->isOwner()
+            || ($this->isAdmin() && $this->can(Permissions::ACCESS_ADMIN_PANEL));
     }
 }
