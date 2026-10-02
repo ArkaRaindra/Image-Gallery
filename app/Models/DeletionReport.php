@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\PanelNotifications;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -120,6 +121,8 @@ class DeletionReport extends Model
             if ($subject instanceof Post) {
                 Tag::recalculateAllPostCounts();
             }
+
+            PanelNotifications::deletionRequested($report);
 
             return $report;
         });

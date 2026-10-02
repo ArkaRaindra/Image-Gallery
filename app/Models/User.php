@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Support\PanelNotifications;
 use App\Support\Permissions;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
@@ -95,10 +96,20 @@ class User extends Authenticatable implements FilamentUser
             }
         });
 
-        static::saved(function (self $user): void {
-            if ($user->wasRecentlyCreated || $user->wasChanged('role')) {
-                $user->syncSpatieRole();
+        static::created(function (self $user): void {
+            $user->syncSpatieRole();
+
+            PanelNotifications::userRegistered($user);
+        });
+
+        static::updated(function (self $user): void {
+            if (! $user->wasChanged('role')) {
+                return;
             }
+
+            $user->syncSpatieRole();
+
+            PanelNotifications::userRoleChanged($user, $user->getOriginal('role'), (string) $user->role);
         });
 
         static::deleting(function (self $user): ?bool {
@@ -342,13 +353,17 @@ class User extends Authenticatable implements FilamentUser
                 ->whereKey($previousOwnerIds)
                 ->update(['role' => self::ROLE_ADMIN]);
 
+            $this->role = self::ROLE_OWNER;
+            $this->save();
+
             static::query()
                 ->whereKey($previousOwnerIds)
                 ->get()
-                ->each(fn (self $previousOwner) => $previousOwner->syncSpatieRole());
+                ->each(function (self $previousOwner): void {
+                    $previousOwner->syncSpatieRole();
 
-            $this->role = self::ROLE_OWNER;
-            $this->save();
+                    PanelNotifications::userRoleChanged($previousOwner, self::ROLE_OWNER, self::ROLE_ADMIN);
+                });
         });
     }
 
