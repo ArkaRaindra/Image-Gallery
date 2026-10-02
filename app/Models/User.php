@@ -10,6 +10,7 @@ use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -146,6 +147,31 @@ class User extends Authenticatable implements FilamentUser
         }
 
         return array_combine($roles, array_map('ucfirst', $roles));
+    }
+
+    /**
+     * Sort by role rank instead of alphabetically: owner, admin, moderator,
+     * member. Unknown roles fall to the bottom.
+     *
+     * @param  Builder<User>  $query
+     * @return Builder<User>
+     */
+    public function scopeOrderByRole(Builder $query, string $direction = 'desc'): Builder
+    {
+        $cases = [];
+        $bindings = [];
+
+        foreach (self::ROLE_LEVELS as $role => $level) {
+            $cases[] = 'when ? then ?';
+            $bindings[] = $role;
+            $bindings[] = $level;
+        }
+
+        $roleColumn = $query->getModel()->qualifyColumn('role');
+
+        $sql = "case {$roleColumn} ".implode(' ', $cases).' else -1 end';
+
+        return $query->orderByRaw("{$sql} {$direction}", $bindings);
     }
 
     /**
