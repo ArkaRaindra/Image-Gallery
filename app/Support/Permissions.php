@@ -18,6 +18,10 @@ class Permissions
 
     public const DELETE_ANY_USER = 'delete_any_user';
 
+    public const VIEW_ANY_USER_ROLE = 'view_any_user_role';
+
+    public const UPDATE_USER_ROLE = 'update_user_role';
+
     public const VIEW_ANY_ROLE = 'view_any_role';
 
     public const UPDATE_ROLE = 'update_role';
@@ -47,6 +51,8 @@ class Permissions
             self::UPDATE_USER,
             self::DELETE_USER,
             self::DELETE_ANY_USER,
+            self::VIEW_ANY_USER_ROLE,
+            self::UPDATE_USER_ROLE,
             self::VIEW_ANY_ROLE,
             self::UPDATE_ROLE,
             self::VIEW_ANY_PERMISSION,
