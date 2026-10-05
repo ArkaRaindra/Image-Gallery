@@ -3,7 +3,9 @@
 namespace App\Filament\Resources\Posts\Tables;
 
 use App\Models\DeletionReport;
+use App\Models\Post;
 use App\Models\Tag;
+use App\Support\TagColors;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -53,6 +55,9 @@ class PostsTable
                     ->falseColor('gray'),
                 TextColumn::make('tags.name')
                     ->badge()
+                    ->color(fn (string $state, Post $record): array => TagColors::filament(
+                        $record->tags->firstWhere('name', $state)?->category,
+                    ))
                     ->limit(5),
                 TextColumn::make('created_at')
                     ->dateTime()

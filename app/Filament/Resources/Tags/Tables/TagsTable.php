@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Tags\Tables;
 
+use App\Models\Tag;
+use App\Support\TagColors;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -17,10 +19,12 @@ class TagsTable
         return $table
             ->columns([
                 TextColumn::make('name')
+                    ->color(fn (Tag $record): array => TagColors::filament($record->category))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('category')
                     ->badge()
+                    ->color(fn (?string $state): array => TagColors::filament($state))
                     ->sortable(),
                 TextColumn::make('post_count')
                     ->label('Posts')

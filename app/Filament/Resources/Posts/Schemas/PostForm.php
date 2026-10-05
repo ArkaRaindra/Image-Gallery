@@ -3,12 +3,15 @@
 namespace App\Filament\Resources\Posts\Schemas;
 
 use App\Models\Post;
+use App\Models\Tag;
+use App\Support\TagColors;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
+use Illuminate\Support\HtmlString;
 
 class PostForm
 {
@@ -47,6 +50,10 @@ class PostForm
                     ->multiple()
                     ->searchable()
                     ->preload()
+                    ->allowHtml()
+                    ->getOptionLabelFromRecordUsing(fn (Tag $record): HtmlString => new HtmlString(
+                        '<span style="color: '.TagColors::hex($record->category).'">'.e($record->name).'</span>'
+                    ))
                     ->createOptionForm([
                         TextInput::make('name')->required(),
                         Select::make('category')

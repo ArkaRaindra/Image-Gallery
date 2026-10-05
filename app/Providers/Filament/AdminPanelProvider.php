@@ -32,6 +32,8 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             ->databaseNotifications()
             ->databaseNotificationsPolling('30s')
+            ->brandName('')
+            ->brandLogo('images/VSC.png')
             ->favicon(asset('images/queen.png'))
             ->colors([
                 'primary' => Color::Amber,

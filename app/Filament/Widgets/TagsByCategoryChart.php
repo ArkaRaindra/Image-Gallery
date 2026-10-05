@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Tag;
+use App\Support\TagColors;
 use Filament\Widgets\ChartWidget;
 
 class TagsByCategoryChart extends ChartWidget
@@ -19,15 +20,11 @@ class TagsByCategoryChart extends ChartWidget
     protected ?string $maxHeight = '300px';
 
     /**
-     * @var array<string, string>
+     * Same order as the tag sidebar on the public site.
+     *
+     * @var list<string>
      */
-    private const CATEGORY_COLORS = [
-        'general' => '#0ea5e9',
-        'artist' => '#ef4444',
-        'character' => '#22c55e',
-        'copyright' => '#a855f7',
-        'meta' => '#f59e0b',
-    ];
+    private const CATEGORIES = ['artist', 'copyright', 'character', 'general', 'meta'];
 
     protected function getType(): string
     {
@@ -45,10 +42,10 @@ class TagsByCategoryChart extends ChartWidget
         $data = [];
         $colors = [];
 
-        foreach (self::CATEGORY_COLORS as $category => $color) {
+        foreach (self::CATEGORIES as $category) {
             $labels[] = ucfirst($category);
             $data[] = (int) ($counts[$category] ?? 0);
-            $colors[] = $color;
+            $colors[] = TagColors::hex($category);
         }
 
         return [
