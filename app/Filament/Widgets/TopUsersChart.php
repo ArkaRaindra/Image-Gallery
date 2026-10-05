@@ -11,7 +11,7 @@ class TopUsersChart extends ChartWidget
 {
     protected static ?int $sort = 2;
 
-    protected ?string $heading = 'Top 5 Users by Posts & Comments';
+    protected ?string $heading = 'Top Users by Posts & Comments';
 
     protected int|string|array $columnSpan = [
         'default' => 'full',
@@ -57,11 +57,19 @@ class TopUsersChart extends ChartWidget
                     'label' => 'Posts',
                     'data' => $topIds->map(fn ($id) => $posts[$id] ?? 0)->all(),
                     'backgroundColor' => '#f59e0b',
+                    'hoverBackgroundColor' => '#d97706',
+                    'hoverBorderColor' => '#92400e',
+                    'hoverBorderWidth' => 2,
+                    'borderRadius' => 6,
                 ],
                 [
                     'label' => 'Comments',
                     'data' => $topIds->map(fn ($id) => $comments[$id] ?? 0)->all(),
                     'backgroundColor' => '#0ea5e9',
+                    'hoverBackgroundColor' => '#0284c7',
+                    'hoverBorderColor' => '#075985',
+                    'hoverBorderWidth' => 2,
+                    'borderRadius' => 6,
                 ],
             ],
             'labels' => $topIds->map(fn ($id) => $users[$id] ?? 'Unknown')->all(),
@@ -71,6 +79,11 @@ class TopUsersChart extends ChartWidget
     protected function getOptions(): array
     {
         return [
+            'transitions' => [
+                'active' => [
+                    'animation' => ['duration' => 250],
+                ],
+            ],
             'scales' => [
                 'y' => [
                     'beginAtZero' => true,

@@ -9,7 +9,7 @@ class TagsByCategoryChart extends ChartWidget
 {
     protected static ?int $sort = 3;
 
-    protected ?string $heading = 'Tags By Category';
+    protected ?string $heading = 'Tags by Category';
 
     protected int|string|array $columnSpan = [
         'default' => 'full',
@@ -28,6 +28,11 @@ class TagsByCategoryChart extends ChartWidget
         'copyright' => '#a855f7',
         'meta' => '#f59e0b',
     ];
+
+    protected function getType(): string
+    {
+        return 'doughnut';
+    }
 
     protected function getData(): array
     {
@@ -52,23 +57,30 @@ class TagsByCategoryChart extends ChartWidget
                     'label' => 'Tags',
                     'data' => $data,
                     'backgroundColor' => $colors,
+                    // The hovered slice slides outward.
+                    'hoverOffset' => 14,
+                    'hoverBorderWidth' => 3,
                 ],
             ],
             'labels' => $labels,
         ];
     }
 
-    protected function getType(): string
-    {
-        return 'doughnut';
-    }
-
     protected function getOptions(): array
     {
         return [
+            // Padding keeps the slice from being clipped when it moves out.
+            'layout' => [
+                'padding' => 16,
+            ],
+            'transitions' => [
+                'active' => [
+                    'animation' => ['duration' => 250],
+                ],
+            ],
             'scales' => [
                 'x' => ['display' => false],
-                'y' => ['dispaly' => false],
+                'y' => ['display' => false],
             ],
         ];
     }
