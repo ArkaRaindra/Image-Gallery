@@ -21,7 +21,7 @@ class RolesTable
                         User::ROLE_OWNER => 'warning',
                         User::ROLE_ADMIN => 'danger',
                         User::ROLE_MODERATOR => 'success',
-                        default => 'gray',
+                        default => 'info',
                     }),
                 TextColumn::make('permissions_count')
                     ->label('Permissions')

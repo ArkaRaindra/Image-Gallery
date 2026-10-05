@@ -36,7 +36,7 @@ class UserRolesTable
                         User::ROLE_OWNER => 'warning',
                         User::ROLE_ADMIN => 'danger',
                         User::ROLE_MODERATOR => 'success',
-                        default => 'gray',
+                        default => 'info',
                     })
                     ->sortable(query: fn (Builder $query, string $direction): Builder => $query
                         ->orderByRole($direction)
