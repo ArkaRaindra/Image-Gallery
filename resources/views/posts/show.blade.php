@@ -108,6 +108,29 @@
                             Resize to window
                         </button>
                     </li>
+                    @if ($post->isManagedBy(auth()->user()))
+                        <li>
+                            <button type="button" id="set-parent-toggle"
+                                class="text-gray-700 hover:underline text-left cursor-pointer">
+                                Set parent
+                            </button>
+                            <form method="POST" action="{{ route('posts.parent', $post) }}" id="set-parent-form"
+                                class="{{ $errors->parent->any() ? '' : 'hidden' }} mt-1 space-y-1">
+                                @csrf
+                                <div class="flex gap-1">
+                                    <input type="number" name="parent_id" min="1" placeholder="Post ID"
+                                        value="{{ old('parent_id', $post->parent_id) }}"
+                                        class="flex-1 min-w-0 px-2 py-1 rounded bg-white border border-gray-700 text-sm focus:outline-none focus:border-sky-500">
+                                    <button type="submit"
+                                        class="px-2 rounded bg-green-700 hover:bg-green-800 text-white text-xs cursor-pointer">Save</button>
+                                </div>
+                                <p class="text-xs text-gray-600">Leave empty to remove the parent.</p>
+                                @if ($errors->parent->any())
+                                    <p class="text-xs text-red-700">{{ $errors->parent->first() }}</p>
+                                @endif
+                            </form>
+                        </li>
+                    @endif
                     @unless ($post->isVideo())
                         @if ($post->canManageNotes(auth()->user()))
                             <li>
@@ -146,6 +169,13 @@
                 <button type="button" id="fav-banner-close"
                     class="text-white/70 hover:text-white cursor-pointer">×</button>
             </div>
+
+            @include('partials.post-family', [
+                'post' => $post,
+                'parent' => $parent,
+                'siblings' => $siblings,
+                'children' => $children,
+            ])
 
             <div class="relative rounded p-2 mb-3">
                 <div class="relative" data-post-media-container>
@@ -557,6 +587,28 @@
             btn?.addEventListener('click', (e) => {
                 e.preventDefault();
                 active ? deactivate() : activate();
+            });
+        })();
+
+        (function() {
+            document.getElementById('set-parent-toggle')?.addEventListener('click', () => {
+                document.getElementById('set-parent-form')?.classList.toggle('hidden');
+            });
+
+            document.querySelectorAll('[data-family-help]').forEach((link) => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    document.getElementById('family-help')?.classList.toggle('hidden');
+                });
+            });
+
+            document.querySelectorAll('[data-family-toggle]').forEach((link) => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const content = link.closest('[data-family-box]').querySelector('[data-family-content]');
+                    const hidden = content.classList.toggle('hidden');
+                    link.textContent = hidden ? 'show »' : '« hide';
+                });
             });
         })();
 

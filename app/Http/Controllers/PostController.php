@@ -49,6 +49,24 @@ class PostController extends Controller
     public function show(Request $request, Post $post)
     {
         $post->load('tags', 'uploader', 'comments.user', 'notes');
+        $post->loadCount('visibleChildren as children_count');
+
+        $parent = $post->parent_id
+            ? Post::query()->approved()->withVisibleChildrenCount()->find($post->parent_id)
+            : null;
+
+        $siblings = $parent
+            ? Post::query()->approved()->withVisibleChildrenCount()
+                ->where('parent_id', $parent->id)
+                ->whereKeyNot($post->id)
+                ->orderBy('id')
+                ->get()
+            : collect();
+
+        $children = Post::query()->approved()->withVisibleChildrenCount()
+            ->where('parent_id', $post->id)
+            ->orderBy('id')
+            ->get();
 
         $tagsQuery = $request->string('tags')->toString();
 
@@ -59,6 +77,9 @@ class PostController extends Controller
 
         return view('posts.show', [
             'post' => $post,
+            'parent' => $parent,
+            'siblings' => $siblings,
+            'children' => $children,
             'tagQuery' => $tagsQuery,
             'prevId' => $prevId,
             'nextId' => $nextId,
@@ -100,6 +121,29 @@ class PostController extends Controller
             'score' => $post->fresh()->score,
             'voted' => $newVote,
         ]);
+    }
+
+    public function updateParent(Request $request, Post $post): RedirectResponse
+    {
+        abort_unless($post->isManagedBy($request->user()), 403);
+
+        $data = $request->validateWithBag('parent', [
+            'parent_id' => ['nullable', 'integer', 'min:1', 'exists:posts,id'],
+        ]);
+
+        $parentId = $data['parent_id'] ?? null;
+
+        if ($parentId !== null) {
+            $error = $post->parentAssignmentError((int) $parentId);
+
+            if ($error !== null) {
+                return back()->withErrors(['parent_id' => $error], 'parent');
+            }
+        }
+
+        $post->update(['parent_id' => $parentId]);
+
+        return back()->with('status', $parentId ? 'Parent updated.' : 'Parent removed.');
     }
 
     public function updateThumbnail(Request $request, Post $post)
@@ -166,7 +210,7 @@ class PostController extends Controller
 
         $token = $tokens->first();
 
-        if (Str::startsWith($token, ['-', 'rating:', 'user:', 'fav:'])) {
+        if (Str::startsWith($token, ['-', 'rating:', 'user:', 'fav:', 'parent:', 'child:'])) {
             return null;
         }
 

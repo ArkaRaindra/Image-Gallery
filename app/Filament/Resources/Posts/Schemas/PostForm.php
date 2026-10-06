@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Posts\Schemas;
 use App\Models\Post;
 use App\Models\Tag;
 use App\Support\TagColors;
+use Closure;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
@@ -67,6 +68,22 @@ class PostForm
                             ->default('general')
                             ->required(),
                     ]),
+
+                TextInput::make('parent_id')
+                    ->label('Parent post ID')
+                    ->numeric()
+                    ->minValue(1)
+                    ->exists('posts', 'id')
+                    ->rule(fn (?Post $record): Closure => function (string $attribute, mixed $value, Closure $fail) use ($record): void {
+                        if (! $record || blank($value)) {
+                            return;
+                        }
+
+                        if ($error = $record->parentAssignmentError((int) $value)) {
+                            $fail($error);
+                        }
+                    })
+                     ->helperText('Optional. Makes this post a child of the given post.'),
 
                 TextInput::make('source')
                     ->url()

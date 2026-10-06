@@ -23,6 +23,7 @@ class UploadController extends Controller
             'tags' => ['required', 'string'],
             'source' => ['nullable', 'url', 'max:255'],
             'description' => ['nullable', 'string', 'max:5000'],
+            'parent_id' => ['nullable', 'integer', 'min:1', 'exists:posts,id'],
         ]);
 
         $path = $request->file('file')->store('posts', 'public');
@@ -30,6 +31,7 @@ class UploadController extends Controller
 
         $post = Post::create([
             'uploader_id' => $request->user()->id,
+            'parent_id' => $data['parent_id'] ?? null,
             'file_path' => $path,
             'file_name' => basename($path),
             'file_ext' => pathinfo($path, PATHINFO_EXTENSION),

@@ -19,6 +19,7 @@ class Post extends Model
 
     protected $fillable = [
         'uploader_id',
+        'parent_id',
         'file_path',
         'file_name',
         'file_ext',
@@ -131,6 +132,50 @@ class Post extends Model
         return $this->belongsTo(User::class, 'approved_by');
     }
 
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parent_id');
+    }
+
+    public function children(): HasMany
+    {
+        return $this->hasMany(self::class, 'parent_id');
+    }
+
+    /**
+     * Children that are visible on the public site.
+     */
+    public function visibleChildren(): HasMany
+    {
+        return $this->children()->approved();
+    }
+
+    /**
+     * Returns an error message when $parentId cannot become this post's
+     * parent (itself, or one of its own descendants), otherwise null.
+     */
+    public function parentAssignmentError(int $parentId): ?string
+    {
+        if ($parentId === $this->getKey()) {
+            return 'A post cannot be its own parent.';
+        }
+
+        $visited = [];
+        $cursor = $parentId;
+
+        while ($cursor && ! isset($visited[$cursor])) {
+            if ($cursor === $this->getKey()) {
+                return 'That post is a descendant of this post, so it cannot be its parent.';
+            }
+
+            $visited[$cursor] = true;
+
+            $cursor = (int) (self::withoutGlobalScopes()->whereKey($cursor)->value('parent_id') ?? 0);
+        }
+
+        return null;
+    }
+
     public function tags(): BelongsToMany
     {
         return $this->belongsToMany(Tag::class, 'post_tags')
@@ -170,6 +215,14 @@ class Post extends Model
     public function scopeApproved($query)
     {
         return $query->where('is_approved', true);
+    }
+
+    /**
+     * Adds `children_count` (approved, non-hidden children) to each post.
+     */
+    public function scopeWithVisibleChildrenCount($query)
+    {
+        return $query->withCount('visibleChildren as children_count');
     }
 
     public function tagStringByCategory(string $category): string

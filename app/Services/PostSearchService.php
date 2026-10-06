@@ -22,6 +22,8 @@ class PostSearchService
                 Str::startsWith($token, 'rating:') => $this->applyRating($builder, Str::after($token, 'rating:')),
                 Str::startsWith($token, 'user:') => $this->applyUploader($builder, Str::after($token, 'user:')),
                 Str::startsWith($token, 'fav:') => $this->applyFavoritedBy($builder, Str::after($token, 'fav:')),
+                Str::startsWith($token, 'parent:') => $this->applyParent($builder, Str::after($token, 'parent:')),
+                Str::startsWith($token, 'child:') => $this->applyChild($builder, Str::after($token, 'child:')),
                 default => $this->applyInclude($builder, $token),
             };
         }
@@ -68,6 +70,36 @@ class PostSearchService
         $builder->whereHas('favoritedBy', function (Builder $q) use ($name) {
             $q->whereRaw("REPLACE(users.name, ' ', '_') = ?", [$name]);
         });
+    }
+
+    /**
+     * parent:none - posts without a parent.
+     * parent:any  - posts that have a parent.
+     * parent:123  - post 123 together with its children.
+     */
+    protected function applyParent(Builder $builder, string $value): void
+    {
+        match (true) {
+            $value === 'none' => $builder->whereNull('posts.parent_id'),
+            $value === 'any' => $builder->whereNotNull('posts.parent_id'),
+            ctype_digit($value) => $builder->where(function (Builder $q) use ($value): void {
+                $q->where('posts.id', (int) $value)->orWhere('posts.parent_id', (int) $value);
+            }),
+            default => null,
+        };
+    }
+
+    /**
+     * child:none - posts without children.
+     * child:any  - posts that have children.
+     */
+    protected function applyChild(Builder $builder, string $value): void
+    {
+        match ($value) {
+            'none' => $builder->whereDoesntHave('visibleChildren'),
+            'any' => $builder->whereHas('visibleChildren'),
+            default => null,
+        };
     }
 
     protected function matchTagName(Builder $q, string $tag): void

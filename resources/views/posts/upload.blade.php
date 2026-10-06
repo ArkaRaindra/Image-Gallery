@@ -45,6 +45,13 @@
                     class="w-full px-2 py-1.5 rounded bg-white border border-gray-700 text-sm">
             </div>
             <div>
+                <label class="block text-sm font-semibold mb-1">Parent post ID (optional)</label>
+                <input type="number" name="parent_id" value="{{ old('parent_id') }}" min="1"
+                    placeholder="e.g. 123"
+                    class="w-full px-2 py-1.5 rounded bg-white border border-gray-700 text-sm">
+                <p class="text-xs text-gray-600 mt-1">Use this when the upload is a variant of another post.</p>
+            </div>
+            <div>
                 <label class="block text-sm font-semibold mb-1">Source (optional)</label>
                 <input type="url" name="source" value="{{ old('source') }}"
                     class="w-full px-2 py-1.5 rounded bg-white border border-gray-700 text-sm">
