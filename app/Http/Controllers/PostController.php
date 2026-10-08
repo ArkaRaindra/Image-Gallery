@@ -22,6 +22,7 @@ class PostController extends Controller
         $posts = $this->search
             ->search($tagsQuery)
             ->with('tags')
+            ->withVisibleChildrenCount()
             ->paginate(24)
             ->withQueryString();
 

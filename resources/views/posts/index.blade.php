@@ -58,13 +58,31 @@
             <div id="panel-posts">
                 <div id="thumb-grid" data-size="medium" class="grid gap-2 md:gap-3 items-start">
                     @forelse ($posts as $post)
-                        @php $votedDirection = $votedPosts[$post->id] ?? null; @endphp
+                        @php
+                            $votedDirection = $votedPosts[$post->id] ?? null;
+
+                            // Green border = has children, orange border = has a parent
+                            // (green with an orange inner ring when it is both).
+                            $hasChildren = ($post->children_count ?? 0) > 0;
+                            $hasParent = (bool) $post->parent_id;
+                            $familyBorderClass = match (true) {
+                                $hasChildren => 'border-1 border-green-600',
+                                $hasParent => 'border-1 border-orange-500',
+                                default => '',
+                            };
+                            $familyRingClass = $hasChildren && $hasParent ? 'ring-2 ring-inset ring-orange-500' : '';
+                        @endphp
                         <div class="relative group">
                             <a href="{{ route('posts.show', $post) }}" class="block rounded overflow-hidden cursor-default">
                                 <div class="relative flex items-center justify-center rounded-t overflow-hidden"
                                     data-thumb-container>
                                     <div class="absolute inset-0" data-thumb-fit>
                                         @include('partials.duration-badge', ['post' => $post])
+                                        @if ($familyBorderClass)
+                                            <div class="pointer-events-none absolute inset-0 z-10 {{ $familyBorderClass }} {{ $familyRingClass }}"
+                                                title="{{ $hasChildren && $hasParent ? 'Has a parent and children' : ($hasChildren ? 'Has children' : 'Has a parent') }}">
+                                            </div>
+                                        @endif
                                         @if ($post->thumbnailIsVideo())
                                             <video data-thumb-media
                                                 src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail_path) }}"
@@ -81,7 +99,8 @@
                                     </div>
                                 </div>
                                 <div class="flex items-center justify-center gap-1.5 text-xs text-gray-500 py-1"
-                                    data-vote-widget data-post-id="{{ $post->id }}" data-voted="{{ $votedDirection }}">
+                                    data-vote-widget data-post-id="{{ $post->id }}"
+                                    data-voted="{{ $votedDirection }}">
                                     <button type="button" data-vote="up"
                                         class="{{ $votedDirection === 'up' ? 'text-green-800' : 'hover:text-green-700 cursor-pointer' }}">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
@@ -123,7 +142,7 @@
     </div>
 
     <script>
-                (function() {
+        (function() {
             const select = document.getElementById('thumb-size');
             const grid = document.getElementById('thumb-grid');
             if (!select || !grid) return;
