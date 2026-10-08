@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Posts\Tables;
 
+use App\Filament\Resources\Posts\Actions\ViewPostAction;
 use App\Models\DeletionReport;
 use App\Models\Post;
 use App\Models\Tag;
@@ -79,6 +80,7 @@ class PostsTable
             ])
             ->defaultSort('created_at', 'desc')
             ->recordActions([
+                ViewPostAction::make(),
                 EditAction::make(),
                 DeleteAction::make(),
             ])
