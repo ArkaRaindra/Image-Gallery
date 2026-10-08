@@ -34,6 +34,9 @@ class TagForm
                     ->label('Wiki content')
                     ->fileAttachmentsDisk('public')
                     ->fileAttachmentsDirectory('wiki')
+                    ->extraAttributes([
+                        'style' => 'min-height: 400px;',
+                    ])
                     ->columnSpanFull(),
             ]);
     }
