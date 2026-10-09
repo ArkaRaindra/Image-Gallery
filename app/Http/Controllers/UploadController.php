@@ -12,7 +12,7 @@ class UploadController extends Controller
 {
     public function create()
     {
-        return view('posts.upload');
+        return view('posts.upload', ['categories' => Tag::CATEGORIES]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -21,6 +21,7 @@ class UploadController extends Controller
             'file' => ['required', 'file', 'mimes:jpg,jpeg,png,gif,webp,mp4', 'max:102400'],
             'rating' => ['required', 'in:general,sensitive,questionable,explicit'],
             'tags' => ['required', 'string'],
+            'tag_categories' => ['nullable', 'json'],
             'source' => ['nullable', 'url', 'max:255'],
             'description' => ['nullable', 'string', 'max:5000'],
             'parent_id' => ['nullable', 'integer', 'min:1', 'exists:posts,id'],
@@ -51,10 +52,24 @@ class UploadController extends Controller
             $post->update(['width' => $imageSize[0], 'height' => $imageSize[1]]);
         }
 
-        $tagIds = collect(explode(' ', trim($data['tags'])))
-            ->map(fn ($t) => trim($t))
+        // Category picked for each new tag on the form, as {tag_name: category}.
+        // It only applies to tags that do not exist yet: an existing tag keeps its category.
+        $chosenCategories = json_decode($data['tag_categories'] ?? '[]', true);
+        $chosenCategories = is_array($chosenCategories) ? $chosenCategories : [];
+
+        $tagIds = collect(preg_split('/\s+/', trim($data['tags'])))
+            ->map(fn ($name) => Tag::normalizeName($name))
             ->filter()
-            ->map(fn ($name) => Tag::firstOrCreate(['name' => $name], ['category' => 'general'])->id);
+            ->unique()
+            ->map(function (string $name) use ($chosenCategories) {
+                $category = $chosenCategories[$name] ?? 'general';
+
+                if (! is_string($category) || ! in_array($category, Tag::CATEGORIES, true)) {
+                    $category = 'general';
+                }
+
+                return Tag::firstOrCreate(['name' => $name], ['category' => $category])->id;
+            });
 
         $post->tags()->sync($tagIds);
 

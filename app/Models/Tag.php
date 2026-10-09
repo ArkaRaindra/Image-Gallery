@@ -12,6 +12,13 @@ class Tag extends Model
 {
     use HasFactory;
 
+    /**
+     * Every tag category, in the order they are offered in forms.
+     *
+     * @var list<string>
+     */
+    public const CATEGORIES = ['general', 'artist', 'character', 'copyright', 'meta'];
+
     protected $fillable = [
         'name',
         'category',
@@ -21,12 +28,20 @@ class Tag extends Model
     protected static function booted(): void
     {
         static::saving(function (self $tag) {
-            $tag->name = Str::of($tag->name)
-                ->lower()
-                ->replace(' ', '_')
-                ->trim('_')
-                ->toString();
+            $tag->name = self::normalizeName($tag->name);
         });
+    }
+
+    /**
+     * The form a tag name is always stored in: lowercase, underscores for spaces.
+     */
+    public static function normalizeName(string $name): string
+    {
+        return Str::of($name)
+            ->lower()
+            ->replace(' ', '_')
+            ->trim('_')
+            ->toString();
     }
 
     public function posts(): BelongsToMany

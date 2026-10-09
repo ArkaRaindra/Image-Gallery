@@ -33,4 +33,21 @@ class TagController extends Controller
 
         return response()->json($tags);
     }
+
+    /**
+     * Category of each given tag name that already exists, as {name: category}.
+     * Names that do not exist yet are left out. Used by the upload form.
+     */
+    public function lookup(Request $request): JsonResponse
+    {
+        $names = collect((array) $request->query('names', []))
+            ->filter(fn ($name) => is_string($name))
+            ->map(fn (string $name) => Tag::normalizeName($name))
+            ->filter()
+            ->unique()
+            ->take(100)
+            ->values();
+
+        return response()->json((object) Tag::whereIn('name', $names)->pluck('category', 'name')->all());
+    }
 }

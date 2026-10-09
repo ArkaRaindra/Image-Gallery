@@ -33,6 +33,7 @@ Route::get('/comments', [CommentsPageController::class, 'index'])->name('comment
 Route::get('/comments/search', [CommentsPageController::class, 'search'])->name('comments.search');
 Route::get('/wiki/{tag:name}', [TagController::class, 'wiki'])->name('tags.wiki');
 Route::get('/tags/autocomplete', [TagController::class, 'autocomplete'])->name('tags.autocomplete');
+Route::get('/tags/lookup', [TagController::class, 'lookup'])->name('tags.lookup');
 
 Route::get('/notes', [NoteController::class, 'index'])->name('notes.index');
 Route::get('/notes/changes', [NoteController::class, 'changes'])->name('notes.changes');
