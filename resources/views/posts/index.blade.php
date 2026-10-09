@@ -61,16 +61,17 @@
                         @php
                             $votedDirection = $votedPosts[$post->id] ?? null;
 
-                            // Green border = has children, orange border = has a parent
-                            // (green with an orange inner ring when it is both).
+                            // Green border = has children, orange border = has a parent.
+                            // When it is both, ONE border is split in two colors:
+                            // top + left green (children), bottom + right orange (parent).
                             $hasChildren = ($post->children_count ?? 0) > 0;
                             $hasParent = (bool) $post->parent_id;
                             $familyBorderClass = match (true) {
-                                $hasChildren => 'border-1 border-green-600',
-                                $hasParent => 'border-1 border-orange-500',
+                                $hasChildren && $hasParent => 'border-2 border-t-green-600 border-l-green-600 border-b-orange-500 border-r-orange-500',
+                                $hasChildren => 'border-2 border-green-600',
+                                $hasParent => 'border-2 border-orange-500',
                                 default => '',
                             };
-                            $familyRingClass = $hasChildren && $hasParent ? 'ring-2 ring-inset ring-orange-500' : '';
                         @endphp
                         <div class="relative group">
                             <a href="{{ route('posts.show', $post) }}" class="block rounded overflow-hidden cursor-default">
@@ -79,7 +80,7 @@
                                     <div class="absolute inset-0" data-thumb-fit>
                                         @include('partials.duration-badge', ['post' => $post])
                                         @if ($familyBorderClass)
-                                            <div class="pointer-events-none absolute inset-0 z-10 {{ $familyBorderClass }} {{ $familyRingClass }}"
+                                            <div class="pointer-events-none absolute inset-0 z-10 {{ $familyBorderClass }}"
                                                 title="{{ $hasChildren && $hasParent ? 'Has a parent and children' : ($hasChildren ? 'Has children' : 'Has a parent') }}">
                                             </div>
                                         @endif

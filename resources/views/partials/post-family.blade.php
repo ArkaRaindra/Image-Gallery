@@ -58,7 +58,7 @@
     <div id="family-help" class="hidden mb-3 rounded border border-gray-500 bg-white p-3 text-xs text-gray-800">
         <p class="mb-1">A parent post groups related posts such as alternate versions of the same picture.
             Posts that share a parent are siblings.</p>
-        <p class="mb-1">A green border marks a post that has children, an orange border marks a post that has a parent.</p>
+        <p class="mb-1">A green border marks a post that has children, an orange border marks a post that has a parent. A border split in two colors (green top/left, orange bottom/right) marks a post that has both.</p>
         <p>Search with <code>parent:123</code>, <code>parent:none</code>, <code>parent:any</code>,
             <code>child:none</code> or <code>child:any</code>.</p>
     </div>
