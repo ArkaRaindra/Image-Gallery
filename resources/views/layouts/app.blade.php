@@ -16,6 +16,7 @@
         $isAccountSection = request()->routeIs('account.*');
         $isCommentsSection = request()->routeIs('comments.index') || request()->routeIs('comments.search');
         $isNotesSection = request()->routeIs('notes.index') || request()->routeIs('notes.changes');
+        $isWikiSection = request()->routeIs('wiki.*');
     @endphp
     <header class="bg-gallery-green ">
         {{-- Baris logo (paling atas, mobile & desktop) --}}

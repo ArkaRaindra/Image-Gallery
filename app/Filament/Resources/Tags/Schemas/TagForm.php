@@ -30,6 +30,11 @@ class TagForm
                     ->required()
                     ->default('general'),
 
+                TextInput::make('other_names')
+                    ->label('Other names')
+                    ->helperText('Aliases shown under the wiki title, such as the name on other sites. Separate with spaces.')
+                    ->maxLength(255),
+
                 RichEditor::make('description')
                     ->label('Wiki content')
                     ->fileAttachmentsDisk('public')

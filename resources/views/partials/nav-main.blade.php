@@ -14,6 +14,7 @@
 <span class="text-gray-600 cursor-not-allowed">Artists</span>
 <span class="text-gray-600 cursor-not-allowed">Tags</span>
 <span class="text-gray-600 cursor-not-allowed">Pools</span>
-<span class="text-gray-600 cursor-not-allowed">Wiki</span>
+<a href="{{ route('wiki.show', 'help:home') }}"
+    class="text-green-900 {{ $isWikiSection ? 'font-bold text-base' : '' }}">Wiki</a>
 <span class="text-gray-600 cursor-not-allowed">Forum</span>
 <span class="text-gray-600 cursor-not-allowed">More »</span>

@@ -2,9 +2,11 @@
 
 namespace App\Providers;
 
+use App\Models\Tag;
 use App\Policies\PermissionPolicy;
 use App\Policies\RolePolicy;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -34,5 +36,14 @@ class AppServiceProvider extends ServiceProvider
 
         Permission::saved($forgetCachedPermissions);
         Permission::deleted($forgetCachedPermissions);
+
+        View::composer('partials.wiki-sidebar', function ($view): void {
+            $view->with('recentWikiPages', Tag::query()
+                ->withWiki()
+                ->orderByDesc('wiki_updated_at')
+                ->orderByDesc('id')
+                ->limit(30)
+                ->get(['id', 'name', 'category']));
+        });
     }
 }

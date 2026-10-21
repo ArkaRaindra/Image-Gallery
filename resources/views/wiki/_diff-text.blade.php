@@ -1,0 +1,1 @@
+@foreach ($segments as $segment)@if ($segment['type'] === 'del')<del class="bg-red-200 text-red-900 line-through">{{ $segment['text'] }}</del>@elseif ($segment['type'] === 'add')<ins class="bg-green-200 text-green-900 no-underline">{{ $segment['text'] }}</ins>@else<span>{{ $segment['text'] }}</span>@endif@endforeach

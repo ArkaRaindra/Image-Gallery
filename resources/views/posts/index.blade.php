@@ -249,8 +249,12 @@
                     try {
                         const res = await fetch('/wiki/' + encodeURIComponent(tabWiki.dataset.tag));
                         const data = await res.json();
+                        const aliases = (data.other_names || []).map((name) =>
+                            `<span class="px-2 py-0.5 rounded border border-gray-700 bg-white/60 text-xs text-sky-700">${escapeHtml(name)}</span>`
+                        ).join('');
                         panelWiki.innerHTML = `
                             <h2 class="text-lg font-semibold mb-1">${escapeHtml(data.name)}</h2>
+                            ${aliases ? `<div class="flex flex-wrap gap-1 mb-2">${aliases}</div>` : ''}
                             <p class="text-xs text-gray-500 mb-4">${escapeHtml(data.category)} · ${data.post_count} posts</p>
                             <div class="wiki-content text-sm text-gray-800">${data.description || 'No wiki content yet for this tag.'}</div>
                         `;

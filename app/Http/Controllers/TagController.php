@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Tag;
+use App\Support\NoteFormatter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -14,7 +15,8 @@ class TagController extends Controller
             'name' => $tag->name,
             'category' => $tag->category,
             'post_count' => $tag->post_count,
-            'description' => $tag->description,
+            'description' => NoteFormatter::sanitize($tag->description),
+            'other_names' => $tag->otherNameList(),
         ]);
     }
 
@@ -26,10 +28,23 @@ class TagController extends Controller
             return response()->json([]);
         }
 
-        $tags = Tag::where('name', 'like', $q.'%')
+        $query = Tag::where('name', 'like', $q.'%');
+
+        // The wiki search only wants tags that have a wiki page.
+        if ($request->boolean('with_wiki')) {
+            $query->withWiki();
+        }
+
+        $tags = $query
             ->orderByDesc('post_count')
             ->limit(15)
-            ->get(['name', 'category', 'post_count']);
+            ->get(['name', 'category', 'post_count', 'description'])
+            ->map(fn (Tag $tag) => [
+                'name' => $tag->name,
+                'category' => $tag->category,
+                'post_count' => $tag->post_count,
+                'has_wiki' => $tag->hasWiki(),
+            ]);
 
         return response()->json($tags);
     }

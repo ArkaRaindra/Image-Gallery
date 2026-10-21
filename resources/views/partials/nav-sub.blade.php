@@ -32,6 +32,27 @@
     <a href="{{ route('notes.changes') }}"
         class="hover:text-gray-200 cursor-pointer {{ request()->routeIs('notes.changes') ? 'font-bold text-gray-200' : '' }}">Changes</a>
     <span class="cursor-not-allowed">Help</span>
+@elseif ($isWikiSection)
+    <form method="GET" action="{{ route('wiki.index') }}" class="m-0">
+        <input type="text" name="title" placeholder="Search wiki pages" autocomplete="off"
+            class="w-40 px-2 py-0.5 rounded bg-white border border-gray-700 text-gray-900 text-xs focus:outline-none focus:border-sky-500">
+    </form>
+    <a href="{{ route('wiki.index') }}"
+        class="hover:text-gray-200 cursor-pointer {{ request()->routeIs('wiki.index') ? 'font-bold text-gray-200' : '' }}">Search</a>
+    <a href="{{ route('wiki.create') }}"
+        class="hover:text-gray-200 cursor-pointer {{ request()->routeIs('wiki.create') ? 'font-bold text-gray-200' : '' }}">New</a>
+    <a href="{{ route('wiki.versions') }}"
+        class="hover:text-gray-200 cursor-pointer {{ request()->routeIs('wiki.versions') || request()->routeIs('wiki.diff') ? 'font-bold text-gray-200' : '' }}">Changes</a>
+    <a href="{{ route('wiki.show', 'help:wiki') }}" class="hover:text-gray-200 cursor-pointer">Help</a>
+    @if (!empty($wikiTag))
+        <span>|</span>
+        <a href="{{ route('posts.index', ['tags' => $wikiTag->name]) }}"
+            class="hover:text-gray-200 cursor-pointer">Posts ({{ $wikiTag->post_count }})</a>
+        <a href="{{ route('wiki.versions', ['tag_id' => $wikiTag->id]) }}"
+            class="hover:text-gray-200 cursor-pointer">History</a>
+        <a href="{{ route('wiki.edit', $wikiTag->name) }}"
+            class="hover:text-gray-200 cursor-pointer {{ request()->routeIs('wiki.edit') ? 'font-bold text-gray-200' : '' }}">Edit</a>
+    @endif
 @else
     <a href="{{ route('posts.index') }}"
         class="hover:text-gray-200 cursor-pointer {{ request()->routeIs('posts.index') || request()->routeIs('posts.show') ? 'font-bold text-gray-200' : '' }}">Listing</a>

@@ -12,6 +12,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\WikiPageController;
+use App\Http\Controllers\WikiPageVersionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -34,6 +36,16 @@ Route::get('/comments/search', [CommentsPageController::class, 'search'])->name(
 Route::get('/wiki/{tag:name}', [TagController::class, 'wiki'])->name('tags.wiki');
 Route::get('/tags/autocomplete', [TagController::class, 'autocomplete'])->name('tags.autocomplete');
 Route::get('/tags/lookup', [TagController::class, 'lookup'])->name('tags.lookup');
+
+Route::get('/wiki_pages', [WikiPageController::class, 'index'])->name('wiki.index');
+Route::get('/wiki_pages/new', [WikiPageController::class, 'create'])->name('wiki.create')->middleware('auth');
+Route::post('/wiki_pages', [WikiPageController::class, 'store'])->name('wiki.store')->middleware('auth');
+Route::post('/wiki_pages/upload-image', [WikiPageController::class, 'uploadImage'])->name('wiki.upload-image')->middleware('auth');
+Route::get('/wiki_pages/{title}', [WikiPageController::class, 'show'])->name('wiki.show');
+Route::get('/wiki_pages/{title}/edit', [WikiPageController::class, 'edit'])->name('wiki.edit')->middleware('auth');
+Route::put('/wiki_pages/{title}', [WikiPageController::class, 'update'])->name('wiki.update')->middleware('auth');
+Route::get('/wiki_page_versions', [WikiPageVersionController::class, 'index'])->name('wiki.versions');
+Route::get('/wiki_page_versions/{version}/diff', [WikiPageVersionController::class, 'diff'])->name('wiki.diff');
 
 Route::get('/notes', [NoteController::class, 'index'])->name('notes.index');
 Route::get('/notes/changes', [NoteController::class, 'changes'])->name('notes.changes');
