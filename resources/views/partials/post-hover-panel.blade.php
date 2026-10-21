@@ -15,7 +15,8 @@
         $hoverCategoryOrder = ['artist', 'copyright', 'character', 'general', 'meta'];
         $groupedHoverTags = $post->tags->groupBy('category');
     @endphp
-    <div class="flex flex-wrap gap-x-2 gap-y-0.5">
+    <div data-hover-tags
+        class="flex flex-wrap content-start gap-x-2 gap-y-0.5 max-h-36 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin] [scrollbar-color:#6b7280_transparent]">
         @foreach ($hoverCategoryOrder as $cat)
             @foreach (($groupedHoverTags[$cat] ?? collect())->sortByDesc('post_count') as $tag)
                 @php

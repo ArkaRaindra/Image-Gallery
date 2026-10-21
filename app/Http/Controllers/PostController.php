@@ -28,13 +28,19 @@ class PostController extends Controller
 
         $matchingPostIds = $this->search->search($tagsQuery)->pluck('id');
 
-        $sidebarTags = blank($tagsQuery)
-            ? Tag::where('post_count', '>', 0)->orderByDesc('post_count')->limit(40)->get()
+        $sidebarTagQuery = blank($tagsQuery)
+            ? Tag::where('post_count', '>', 0)
             : Tag::whereHas('posts', fn ($q) => $q->whereIn('posts.id', $matchingPostIds))
-                ->where('post_count', '>', 0)
+                ->where('post_count', '>', 0);
+
+        // The sidebar shows the 10 most used tags of each category.
+        $sidebarTags = collect(Tag::CATEGORIES)->flatMap(
+            fn (string $category) => $sidebarTagQuery->clone()
+                ->where('category', $category)
                 ->orderByDesc('post_count')
-                ->limit(40)
-                ->get();
+                ->limit(10)
+                ->get()
+        );
 
         $singleTag = $this->resolveSingleTag($tagsQuery);
 

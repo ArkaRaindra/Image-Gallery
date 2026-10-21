@@ -7,7 +7,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" href="{{ asset('images/horse.png') }}" type="image/png">
     <title>@yield('title', 'Image Gallery')</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/js/app.js', 'resources/js/hover-panel-fit.js'])
 </head>
 
 <body class="bg-gallery-green text-gray-900 min-h-screen flex flex-col">
@@ -61,7 +61,7 @@
         </div>
     </header>
 
-    <div class="flex-1 w-full px-3 md:px-6 py-4 md:py-6 overflow-x-hidden">
+    <div class="flex-1 w-full px-3 md:px-6 py-4 md:py-6 overflow-x-clip">
         @if (session('status'))
             <div class="mb-4 px-4 py-2 rounded bg-sky-800 text-white text-sm">{{ session('status') }}</div>
         @endif
