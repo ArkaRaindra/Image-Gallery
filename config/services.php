@@ -28,6 +28,11 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'autotagger' => [
+        'url' => env('AUTOTAGGER_URL', 'http://127.0.0.1:5000'),
+        'timeout' => (int) env('AUTOTAGGER_TIMEOUT', 30),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

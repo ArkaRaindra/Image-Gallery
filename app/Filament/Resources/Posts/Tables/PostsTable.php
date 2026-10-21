@@ -59,7 +59,7 @@ class PostsTable
                     ->color(fn (string $state, Post $record): array => TagColors::filament(
                         $record->tags->firstWhere('name', $state)?->category,
                     ))
-                    ->limit(5),
+                    ->limitList(5),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable(),

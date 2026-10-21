@@ -58,6 +58,7 @@ Route::post('/notes/{note}/versions/{version}/revert', [NoteController::class, '
 
 Route::get('/upload', [UploadController::class, 'create'])->name('upload.create')->middleware('auth');
 Route::post('/upload', [UploadController::class, 'store'])->name('upload.store')->middleware('auth');
+Route::post('/upload/autotag', [UploadController::class, 'autotag'])->name('upload.autotag')->middleware('auth');
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login')->middleware('guest');
 Route::post('/login', [AuthController::class, 'login'])->middleware('guest');
