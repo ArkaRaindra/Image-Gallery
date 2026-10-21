@@ -246,9 +246,23 @@
                 @endif
             </div>
 
-            @if ($post->description)
+            @if ($post->description || $post->translated_description)
                 <div class="bg-white border border-gray-950 rounded p-3 text-sm text-gray-900 mb-4">
-                    {{ $post->description }}
+                    @if ($post->description)
+                        <div class="whitespace-pre-line">{{ $post->description }}</div>
+                    @endif
+
+                    @if ($post->translated_description)
+                        {{-- Show/hide translation: <details> toggles without any JavaScript. --}}
+                        <details class="group {{ $post->description ? 'mt-3' : '' }}">
+                            <summary
+                                class="inline-block px-2 py-0.5 rounded border border-gray-700 bg-gray-100 hover:bg-gray-200 text-xs cursor-pointer select-none [&::-webkit-details-marker]:hidden">
+                                <span class="group-open:hidden">Show translation</span>
+                                <span class="hidden group-open:inline">Hide translation</span>
+                            </summary>
+                            <div class="mt-2 pt-2 border-t border-gray-300 whitespace-pre-line">{{ $post->translated_description }}</div>
+                        </details>
+                    @endif
                 </div>
             @endif
 

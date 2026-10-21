@@ -57,7 +57,7 @@
     <a href="{{ route('posts.index') }}"
         class="hover:text-gray-200 cursor-pointer {{ request()->routeIs('posts.index') || request()->routeIs('posts.show') ? 'font-bold text-gray-200' : '' }}">Listing</a>
     @auth
-        <a href="{{ auth()->user()->isAdmin() ? '/admin/posts/create' : route('upload.create') }}"
+        <a href="{{ route('upload.create') }}"
             class="hover:text-gray-200 cursor-pointer">Upload</a>
     @else
         <a href="{{ route('login') }}" class="hover:text-gray-200 cursor-pointer">Upload</a>

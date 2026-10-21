@@ -92,6 +92,10 @@ class PostForm
                 Textarea::make('description')
                     ->columnSpanFull(),
 
+                Textarea::make('translated_description')
+                    ->maxLength(5000)
+                    ->columnSpanFull(),
+
                 Checkbox::make('is_approved')
                     ->label('Approved')
                     ->default(false),

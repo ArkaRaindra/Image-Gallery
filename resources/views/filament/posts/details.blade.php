@@ -81,6 +81,9 @@
         <dt style="{{ $labelStyle }}">Description</dt>
         <dd style="white-space: pre-wrap;">{{ $post->description ?: '-' }}</dd>
 
+        <dt style="{{ $labelStyle }}">Translated description</dt>
+        <dd style="white-space: pre-wrap;">{{ $post->translated_description ?: '-' }}</dd>
+
         <dt style="{{ $labelStyle }}">File</dt>
         <dd style="overflow-wrap: anywhere;">
             {{ $post->file_name }}
