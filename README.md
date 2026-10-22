@@ -1,58 +1,137 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+**README** · [How to run](How-to-run.md) · [Command list](Command-list.md)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+---
 
-## About Laravel
+# Image Gallery
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Image board berbasis **tag** bergaya Danbooru yang bisa dijalankan secara lokal. Pengguna dapat mengunggah gambar/video, memberi tag, mencari dengan sintaks tag, menandai favorit, berkomentar, membuat *notes* pada gambar, dan menulis wiki untuk setiap tag. Pengelolaan konten dan pengguna dilakukan lewat panel admin Filament.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+![PHP](https://img.shields.io/badge/PHP-8.3%2B-777BB4?logo=php&logoColor=white)
+![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)
+![Filament](https://img.shields.io/badge/Filament-5-FDAE4B)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-database-4479A1?logo=mysql&logoColor=white)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Dokumentasi
 
-## Learning Laravel
+| Dokumen | Isi |
+| --- | --- |
+| [How-to-run.md](How-to-run.md) | Langkah instalasi dan menjalankan proyek dari nol, plus solusi masalah umum |
+| [Command-list.md](Command-list.md) | Daftar perintah (Composer, Artisan, NPM, tes) dan sintaks pencarian tag |
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Fitur
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Situs publik
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+- **Posts & pencarian tag** — galeri bergaya thumbnail dengan 24 post per halaman, hover panel pada thumbnail, dan sintaks pencarian (`tag`, `-tag`, `rating:`, `user:`, `fav:`, `parent:`, `child:`, wildcard `*`).
+- **Upload** — gambar (`jpg`, `jpeg`, `png`, `gif`, `webp`) dan video `mp4`, maksimal **100 MB**. File duplikat ditolak berdasarkan MD5. Tag baru bisa diberi kategori (`general`, `artist`, `character`, `copyright`, `meta`).
+- **Autotagger (opsional)** — saran tag otomatis dari layanan autotagger eksternal. Jika layanan tidak aktif, tag tetap bisa diketik manual.
+- **Parent / child / sibling** — relasi antar post dengan kotak info dan thumbnail berborder warna.
+- **Favorites** — simpan post favorit dan lihat daftarnya.
+- **Comments** — komentar dengan balasan, vote, dan unggah gambar; halaman riwayat dan pencarian komentar.
+- **Notes** — catatan pada gambar lengkap dengan riwayat versi dan fitur *revert*.
+- **Wiki** — halaman wiki per tag dan halaman wiki bebas, dengan riwayat perubahan dan tampilan *diff*.
+- **Akun & profil** — statistik pengguna, ganti avatar, kartu profil saat hover nama pengguna.
 
-## Agentic Development
+### Panel admin (`/admin`)
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+- Resource **Posts**, **Tags**, **Users**, **User Roles**, **Roles**, **Permissions**, dan **Deletion Requests**.
+- Approve post yang diunggah anggota (bulk action *Approve*).
+- Dashboard dengan statistik galeri dan grafik: post & komentar per hari, 5 pengguna teraktif, serta perbandingan tag per kategori.
+- Notifikasi panel (database notifications, polling 30 detik).
 
-```bash
-composer require laravel/boost --dev
+## Role & hak akses
 
-php artisan boost:install
+Role disimpan di kolom `role` pada tabel `users` (sebagai sumber peringkat), lalu disinkronkan ke role [Spatie Permission](https://spatie.be/docs/laravel-permission) yang membawa permission.
+
+| Role | Level | Kemampuan utama |
+| --- | :---: | --- |
+| **Owner** | 4 | Hanya boleh ada **satu**. Selalu bisa masuk `/admin`, memegang semua permission, menghapus post/komentar langsung. |
+| **Admin** | 3 | Menghapus post/komentar langsung, meng-approve post, memutuskan *deletion request*. Masuk `/admin` selama role admin memegang permission `access_admin_panel`. |
+| **Moderator** | 2 | Tidak bisa menghapus langsung; mengajukan **deletion request** dengan alasan, lalu admin/owner memutuskan. Tidak bisa masuk `/admin`. |
+| **Member** | 1 | Upload (menunggu approval admin), komentar, favorit, notes, wiki. Tidak bisa masuk `/admin`. |
+
+> [!NOTE]
+> Post yang diunggah admin/owner langsung tampil. Post dari moderator dan member berstatus *pending* sampai di-approve di panel admin.
+
+Cara mengubah role pengguna lewat terminal ada di [Command-list.md](Command-list.md#perintah-artisan-khusus-proyek).
+
+## Teknologi
+
+| Lapisan | Teknologi |
+| --- | --- |
+| Backend | PHP 8.3+, Laravel 13 |
+| Panel admin | Filament 5 |
+| Role & permission | spatie/laravel-permission |
+| Frontend | Blade, Tailwind CSS 4, Vite 8 |
+| Database | MySQL (bawaan `.env.example`); SQLite in-memory untuk tes |
+| Antrean / cache / session | Driver `database` |
+| Kualitas kode | Laravel Pint, PHPUnit 12 |
+
+## Struktur folder
+
+```text
+Image-Gallery/
+├── app/
+│   ├── Console/Commands/     # users:make-admin, users:make-owner, tags:recalculate-counts
+│   ├── Filament/             # Resources & Widgets panel admin
+│   ├── Http/Controllers/     # Controller situs publik
+│   ├── Models/               # Post, Tag, User, Comment, Note, WikiPage, ...
+│   ├── Policies/             # Policy Role, Permission, User
+│   ├── Providers/Filament/   # AdminPanelProvider (path /admin)
+│   ├── Services/             # PostSearchService (sintaks pencarian)
+│   └── Support/              # Permissions, TagColors, formatter wiki/notes
+├── database/
+│   ├── migrations/           # Skema tabel
+│   └── seeders/              # AccountSeeder, RolesAndPermissionsSeeder
+├── resources/
+│   ├── css/ js/              # Aset Vite (Tailwind)
+│   └── views/                # Template Blade
+├── routes/web.php            # Seluruh route situs publik
+├── tests/                    # Unit & Feature test
+├── How-to-run.md
+└── Command-list.md
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+## Mulai cepat
 
-## Contributing
+Ringkasan singkat (detail dan penjelasan tiap langkah ada di [How-to-run.md](How-to-run.md)):
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+composer install
+cp .env.example .env          # Windows: copy .env.example .env
+php artisan key:generate
+# buat database MySQL bernama ImageGallery, lalu sesuaikan DB_* di .env
+php artisan migrate
+php artisan db:seed
+php artisan storage:link
+npm install
+npm run build
+php artisan serve
+```
 
-## Code of Conduct
+Buka <http://localhost:8000>. Panel admin ada di <http://localhost:8000/admin>.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Akun contoh (hasil seeder)
 
-## Security Vulnerabilities
+Setelah `php artisan db:seed`, tersedia akun berikut dengan kata sandi **`password`**:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+| Email | Role |
+| --- | --- |
+| `owner@gmail.com` | Owner |
+| `admin@gmail.com` | Admin |
+| `moderator@gmail.com` | Moderator |
+| `member@gmail.com` | Member |
+| `test@example.com` | Member (user uji dari factory) |
 
-## License
+> [!WARNING]
+> Akun contoh hanya untuk pengembangan lokal. Hapus atau ganti kata sandinya sebelum aplikasi dipasang di server yang dapat diakses publik.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Pengujian
+
+```bash
+composer test
+```
+
+Tes memakai SQLite in-memory (lihat `phpunit.xml`), jadi ekstensi PHP `pdo_sqlite` harus aktif. Perintah tes lainnya ada di [Command-list.md](Command-list.md#pengujian--kualitas-kode).

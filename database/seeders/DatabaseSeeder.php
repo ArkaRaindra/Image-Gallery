@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -13,17 +12,14 @@ class DatabaseSeeder extends Seeder
     /**
      * Seed the application's database.
      *
-     * The roles seeder runs last because model events are off here: it is what
-     * links the users created above to their Spatie role.
+     * The accounts come from AccountSeeder (one per role) and the roles and
+     * permissions from RolesAndPermissionsSeeder, which runs last because
+     * model events are off here: it is what links the users to their Spatie
+     * role.
      */
     public function run(): void
     {
         // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
 
         $this->call(AccountSeeder::class);
 
