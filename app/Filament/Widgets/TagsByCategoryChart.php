@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Tag;
+use App\Support\ChartAnimation;
 use App\Support\TagColors;
 use Filament\Widgets\ChartWidget;
 
@@ -65,7 +66,12 @@ class TagsByCategoryChart extends ChartWidget
 
     protected function getOptions(): array
     {
-        return [
+        // Striking a legend item sweeps its slice shut (or open) and the
+        // other slices smoothly grow / shrink to fill the ring.
+        return array_replace_recursive(ChartAnimation::legendToggle(800, [
+            'animateRotate' => true,
+            'animateScale' => true,
+        ]), [
             // Padding keeps the slice from being clipped when it moves out.
             'layout' => [
                 'padding' => 16,
@@ -79,6 +85,6 @@ class TagsByCategoryChart extends ChartWidget
                 'x' => ['display' => false],
                 'y' => ['display' => false],
             ],
-        ];
+        ]);
     }
 }

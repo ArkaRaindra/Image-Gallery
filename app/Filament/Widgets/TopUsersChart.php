@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Models\Comment;
 use App\Models\Post;
 use App\Models\User;
+use App\Support\ChartAnimation;
 use Filament\Widgets\ChartWidget;
 
 class TopUsersChart extends ChartWidget
@@ -78,7 +79,9 @@ class TopUsersChart extends ChartWidget
 
     protected function getOptions(): array
     {
-        return [
+        // Striking a legend item fades that series out (or in) while the
+        // axis rescales.
+        return array_replace_recursive(ChartAnimation::legendToggle(), [
             'transitions' => [
                 'active' => [
                     'animation' => ['duration' => 250],
@@ -90,6 +93,6 @@ class TopUsersChart extends ChartWidget
                     'ticks' => ['precision' => 0],
                 ],
             ],
-        ];
+        ]);
     }
 }

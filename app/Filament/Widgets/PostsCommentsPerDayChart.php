@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Models\Comment;
 use App\Models\Post;
+use App\Support\ChartAnimation;
 use Carbon\CarbonPeriod;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Database\Eloquent\Builder;
@@ -89,7 +90,9 @@ class PostsCommentsPerDayChart extends ChartWidget
 
     protected function getOptions(): array
     {
-        return [
+        // Striking a legend item fades that line out (or in) while the
+        // axis rescales.
+        return array_replace_recursive(ChartAnimation::legendToggle(), [
             // Hovering anywhere on a day highlights both points of that day.
             'interaction' => [
                 'mode' => 'index',
@@ -106,7 +109,7 @@ class PostsCommentsPerDayChart extends ChartWidget
                     'ticks' => ['precision' => 0],
                 ],
             ],
-        ];
+        ]);
     }
 
     /**
