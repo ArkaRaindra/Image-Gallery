@@ -30,6 +30,13 @@ class TagController extends Controller
 
         $query = Tag::where('name', 'like', $q.'%');
 
+        // The artist pages only want artist tags.
+        $category = $request->query('category');
+
+        if (is_string($category) && in_array($category, Tag::CATEGORIES, true)) {
+            $query->where('category', $category);
+        }
+
         // The wiki search only wants tags that have a wiki page.
         if ($request->boolean('with_wiki')) {
             $query->withWiki();

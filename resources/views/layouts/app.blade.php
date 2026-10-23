@@ -16,11 +16,11 @@
         $isAccountSection = request()->routeIs('account.*');
         $isCommentsSection = request()->routeIs('comments.index') || request()->routeIs('comments.search');
         $isNotesSection = request()->routeIs('notes.index') || request()->routeIs('notes.changes');
+        $isArtistsSection = request()->routeIs('artists.*');
         $isWikiSection = request()->routeIs('wiki.*');
         $isUploadSection = request()->routeIs('upload.*');
     @endphp
-    <header class="bg-gallery-green ">
-        {{-- Baris logo (paling atas, mobile & desktop) --}}
+    <header class="bg-gallery-green">
         <div class="w-full px-4 md:px-6 py-2 flex items-center justify-between">
             <a href="{{ route('home') }}" class="inline-block">
                 <img src="{{ asset('images/VSC.png') }}" alt="Logo" class="w-14 h-14 md:w-20 md:h-20 object-contain">
@@ -39,9 +39,7 @@
             </button>
         </div>
 
-        {{-- Desktop: navigasi utama + sub navigasi --}}
-        <div
-            class="hidden md:flex w-full px-6 py-2 flex-wrap items-center gap-x-6 gap-y-1 text-sm font-medium">
+        <div class="hidden md:flex w-full px-6 py-2 flex-wrap items-center gap-x-6 gap-y-1 text-sm font-medium">
             @include('partials.nav-main')
         </div>
         <div class="hidden md:block bg-green-700/70 border-t border-green-300">
@@ -50,7 +48,6 @@
             </div>
         </div>
 
-        {{-- Mobile: menu hamburger --}}
         <div id="mobile-menu" class="hidden md:hidden border-t border-green-800">
             <div class="px-4 py-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium">
                 @include('partials.nav-main')

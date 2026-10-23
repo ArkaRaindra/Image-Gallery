@@ -1,6 +1,7 @@
 {{-- Tag dropdown (dark list, same look as the search box on the posts page).
      Use it on <input data-wiki-tag-autocomplete> inside an element with data-wiki-tag-wrapper
-     (position: relative). Add data-with-wiki="1" to only suggest tags that have a wiki page. --}}
+     (position: relative). Add data-with-wiki="1" to only suggest tags that have a wiki page,
+     or data-category="artist" (any tag category) to only suggest tags of that category. --}}
 <script>
     (function() {
         if (window.wikiTagAutocompleteReady) return;
@@ -24,6 +25,7 @@
             if (!wrapper) return;
 
             const withWiki = input.dataset.withWiki === '1';
+            const category = input.dataset.category || '';
             const list = document.createElement('ul');
             list.className = 'absolute left-0 right-0 mt-1 bg-gray-900 border border-gray-700 rounded shadow-lg max-h-80 overflow-y-auto text-sm z-30 hidden';
             wrapper.appendChild(list);
@@ -96,7 +98,8 @@
                 timer = setTimeout(async () => {
                     try {
                         const url = @json(route('tags.autocomplete')) + '?q=' + encodeURIComponent(query) +
-                            (withWiki ? '&with_wiki=1' : '');
+                            (withWiki ? '&with_wiki=1' : '') +
+                            (category ? '&category=' + encodeURIComponent(category) : '');
                         const res = await fetch(url);
                         render(await res.json(), query);
                     } catch (err) {

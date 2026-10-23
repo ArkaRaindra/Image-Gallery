@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Services\ArtistService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -33,6 +35,12 @@ class Tag extends Model
         'wiki_updated_at' => 'datetime',
     ];
 
+    /**
+     * False while an artist is being made together with its tag, so the artist
+     * is not made twice.
+     */
+    private static bool $syncArtistRecord = true;
+
     protected static function booted(): void
     {
         static::saving(function (self $tag) {
@@ -47,8 +55,37 @@ class Tag extends Model
         // Every change of the wiki text or the other names becomes a version,
         // whether it was made on the wiki pages or in the admin panel.
         static::saved(function (self $tag): void {
+            // First: the wiki bookkeeping saves the tag again and would reset
+            // what wasChanged() reports.
+            $tag->syncArtistRecord();
             $tag->recordWikiVersion();
         });
+    }
+
+    /**
+     * Runs the callback without making an artist for a tag that enters the
+     * artist category.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
+     */
+    public static function withoutArtistSync(callable $callback): mixed
+    {
+        $previous = self::$syncArtistRecord;
+        self::$syncArtistRecord = false;
+
+        try {
+            return $callback();
+        } finally {
+            self::$syncArtistRecord = $previous;
+        }
+    }
+
+    public function artist(): HasOne
+    {
+        return $this->hasOne(Artist::class);
     }
 
     /**
@@ -126,6 +163,23 @@ class Tag extends Model
             'meta' => 'text-amber-700',
             default => 'text-sky-700',
         };
+    }
+
+    /**
+     * A tag that is new in the artist category, or was moved into it, gets an
+     * artist record.
+     */
+    private function syncArtistRecord(): void
+    {
+        if (! self::$syncArtistRecord || $this->category !== 'artist') {
+            return;
+        }
+
+        if (! $this->wasRecentlyCreated && ! $this->wasChanged('category')) {
+            return;
+        }
+
+        app(ArtistService::class)->ensureForTag($this);
     }
 
     private function recordWikiVersion(): void

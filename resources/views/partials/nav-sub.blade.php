@@ -32,6 +32,19 @@
     <a href="{{ route('notes.changes') }}"
         class="hover:text-gray-200 cursor-pointer {{ request()->routeIs('notes.changes') ? 'font-bold text-gray-200' : '' }}">Changes</a>
     <span class="cursor-not-allowed">Help</span>
+@elseif ($isArtistsSection)
+    <form method="GET" action="{{ route('artists.index') }}" class="m-0">
+        <input type="text" name="name" placeholder="Search artists" autocomplete="off"
+            class="w-40 px-2 py-0.5 rounded bg-white border border-gray-700 text-gray-900 text-xs focus:outline-none focus:border-sky-500">
+    </form>
+    <a href="{{ route('artists.index') }}"
+        class="hover:text-gray-200 cursor-pointer {{ request()->routeIs('artists.index') ? 'font-bold text-gray-200' : '' }}">Artists</a>
+    <a href="{{ route('artists.create') }}"
+        class="hover:text-gray-200 cursor-pointer {{ request()->routeIs('artists.create') ? 'font-bold text-gray-200' : '' }}">New</a>
+    <a href="{{ route('artists.versions') }}"
+        class="hover:text-gray-200 cursor-pointer {{ request()->routeIs('artists.versions') ? 'font-bold text-gray-200' : '' }}">Changes</a>
+    <a href="{{ route('artists.urls') }}"
+        class="hover:text-gray-200 cursor-pointer {{ request()->routeIs('artists.urls') ? 'font-bold text-gray-200' : '' }}">URLs</a>
 @elseif ($isWikiSection)
     <form method="GET" action="{{ route('wiki.index') }}" class="m-0">
         <input type="text" name="title" placeholder="Search wiki pages" autocomplete="off"

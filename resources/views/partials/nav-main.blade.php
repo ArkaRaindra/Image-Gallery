@@ -11,7 +11,8 @@
     class="text-green-900 {{ $isCommentsSection ? 'font-bold text-base' : '' }}">Comments</a>
 <a href="{{ route('notes.index') }}"
     class="text-green-900 {{ $isNotesSection ? 'font-bold text-base' : '' }}">Notes</a>
-<span class="text-gray-600 cursor-not-allowed">Artists</span>
+<a href="{{ route('artists.index') }}"
+    class="text-green-900 {{ $isArtistsSection ? 'font-bold text-base' : '' }}">Artists</a>
 <span class="text-gray-600 cursor-not-allowed">Tags</span>
 <span class="text-gray-600 cursor-not-allowed">Pools</span>
 <a href="{{ route('wiki.show', 'help:home') }}"

@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\ArtistController;
+use App\Http\Controllers\ArtistUrlController;
+use App\Http\Controllers\ArtistVersionController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommentsPageController;
@@ -46,6 +49,14 @@ Route::get('/wiki_pages/{title}/edit', [WikiPageController::class, 'edit'])->nam
 Route::put('/wiki_pages/{title}', [WikiPageController::class, 'update'])->name('wiki.update')->middleware('auth');
 Route::get('/wiki_page_versions', [WikiPageVersionController::class, 'index'])->name('wiki.versions');
 Route::get('/wiki_page_versions/{version}/diff', [WikiPageVersionController::class, 'diff'])->name('wiki.diff');
+
+Route::get('/artists', [ArtistController::class, 'index'])->name('artists.index');
+Route::get('/artists/new', [ArtistController::class, 'create'])->name('artists.create')->middleware('auth');
+Route::post('/artists', [ArtistController::class, 'store'])->name('artists.store')->middleware('auth');
+Route::get('/artists/{artist}/edit', [ArtistController::class, 'edit'])->name('artists.edit')->middleware('auth');
+Route::put('/artists/{artist}', [ArtistController::class, 'update'])->name('artists.update')->middleware('auth');
+Route::get('/artist_versions', [ArtistVersionController::class, 'index'])->name('artists.versions');
+Route::get('/artist_urls', [ArtistUrlController::class, 'index'])->name('artists.urls');
 
 Route::get('/notes', [NoteController::class, 'index'])->name('notes.index');
 Route::get('/notes/changes', [NoteController::class, 'changes'])->name('notes.changes');

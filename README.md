@@ -6,7 +6,7 @@
 
 Image board berbasis **tag** bergaya Danbooru yang bisa dijalankan secara lokal. Pengguna dapat mengunggah gambar/video, memberi tag, mencari dengan sintaks tag, menandai favorit, berkomentar, membuat *notes* pada gambar, dan menulis wiki untuk setiap tag. Pengelolaan konten dan pengguna dilakukan lewat panel admin Filament.
 
-![PHP](https://img.shields.io/badge/PHP-8.3%2B-777BB4?logo=php&logoColor=white)
+![PHP](https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white)
 ![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)
 ![Filament](https://img.shields.io/badge/Filament-5-FDAE4B)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)
@@ -32,6 +32,7 @@ Image board berbasis **tag** bergaya Danbooru yang bisa dijalankan secara lokal.
 - **Comments** — komentar dengan balasan, vote, dan unggah gambar; halaman riwayat dan pencarian komentar.
 - **Notes** — catatan pada gambar lengkap dengan riwayat versi dan fitur *revert*.
 - **Wiki** — halaman wiki per tag dan halaman wiki bebas, dengan riwayat perubahan dan tampilan *diff*.
+- **Artists** — halaman `/artists` dengan pencarian (nama, URL, deleted, has tag), form New/Edit artist (nama, other names, group name, URLs), riwayat perubahan beserta diff (`/artist_versions`), dan daftar URL (`/artist_urls`, dengan dropdown nama artist yang hanya mencari tag artist). Nama artist di tabel membuka halaman wiki tag-nya.
 - **Akun & profil** — statistik pengguna, ganti avatar, kartu profil saat hover nama pengguna.
 
 ### Panel admin (`/admin`)
@@ -61,7 +62,7 @@ Cara mengubah role pengguna lewat terminal ada di [Command-list.md](Command-list
 
 | Lapisan | Teknologi |
 | --- | --- |
-| Backend | PHP 8.3+, Laravel 13 |
+| Backend | PHP 8.4+, Laravel 13 |
 | Panel admin | Filament 5 |
 | Role & permission | spatie/laravel-permission |
 | Frontend | Blade, Tailwind CSS 4, Vite 8 |

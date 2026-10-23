@@ -32,7 +32,7 @@ Pastikan perangkat lunak berikut sudah terpasang.
 
 | Perangkat lunak | Versi | Cek dengan |
 | --- | --- | --- |
-| PHP | 8.3 atau lebih baru | `php -v` |
+| PHP | 8.4.1 atau lebih baru (`composer.json` mengizinkan ^8.3, tetapi `composer.lock` memuat paket Symfony 8 yang butuh 8.4.1+) | `php -v` |
 | Composer | 2.x | `composer -V` |
 | Node.js | Sesuai kebutuhan Vite 8 (disarankan versi LTS terbaru) | `node -v` |
 | NPM | Ikut terpasang bersama Node.js | `npm -v` |
