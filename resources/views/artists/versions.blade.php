@@ -30,8 +30,11 @@
         </label>
         <label class="grid grid-cols-[7rem_1fr] items-center gap-2">
             <span class="font-semibold text-right">Artist</span>
-            <input type="text" name="artist" value="{{ $filters['artist'] }}" autocomplete="off"
-                class="px-2 py-1 rounded bg-white border border-gray-700 focus:outline-none focus:border-sky-500">
+            <div class="relative" data-wiki-tag-wrapper>
+                <input type="text" name="artist" value="{{ $filters['artist'] }}" autocomplete="off"
+                    data-wiki-tag-autocomplete data-category="artist"
+                    class="w-full px-2 py-1 rounded bg-white border border-gray-700 focus:outline-none focus:border-sky-500">
+            </div>
         </label>
         <label class="grid grid-cols-[7rem_1fr] items-center gap-2">
             <span class="font-semibold text-right">Order</span>
@@ -135,4 +138,6 @@
     <div class="mt-6">
         {{ $versions->links('partials.pagination-centered') }}
     </div>
+
+    @include('wiki._tag-autocomplete')
 @endsection

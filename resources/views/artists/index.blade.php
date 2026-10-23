@@ -8,8 +8,11 @@
     <form method="GET" action="{{ route('artists.index') }}" class="mb-4 grid gap-2 max-w-xl text-sm">
         <label class="grid grid-cols-[7rem_1fr] items-center gap-2">
             <span class="font-semibold text-right">Name</span>
-            <input type="text" name="name" value="{{ $filters['name'] }}" autocomplete="off"
-                class="px-2 py-1 rounded bg-white border border-gray-700 focus:outline-none focus:border-sky-500">
+            <div class="relative" data-wiki-tag-wrapper>
+                <input type="text" name="name" value="{{ $filters['name'] }}" autocomplete="off"
+                    data-wiki-tag-autocomplete data-category="artist"
+                    class="w-full px-2 py-1 rounded bg-white border border-gray-700 focus:outline-none focus:border-sky-500">
+            </div>
         </label>
         <label class="grid grid-cols-[7rem_1fr] items-center gap-2">
             <span class="font-semibold text-right">URL</span>
@@ -100,4 +103,6 @@
     <div class="mt-6">
         {{ $artists->links('partials.pagination-centered') }}
     </div>
+
+    @include('wiki._tag-autocomplete')
 @endsection
