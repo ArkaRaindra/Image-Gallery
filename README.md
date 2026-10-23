@@ -4,8 +4,6 @@
 
 # Image Gallery
 
-Image board berbasis **tag** bergaya Danbooru yang bisa dijalankan secara lokal. Pengguna dapat mengunggah gambar/video, memberi tag, mencari dengan sintaks tag, menandai favorit, berkomentar, membuat *notes* pada gambar, dan menulis wiki untuk setiap tag. Pengelolaan konten dan pengguna dilakukan lewat panel admin Filament.
-
 ![PHP](https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white)
 ![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)
 ![Filament](https://img.shields.io/badge/Filament-5-FDAE4B)
